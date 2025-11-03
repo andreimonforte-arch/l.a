@@ -1,0 +1,80 @@
+
+CREATE DATABASE IF NOT EXISTS clothing_store CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE clothing_store;
+
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_username (username),
+    INDEX idx_email (email),
+    INDEX idx_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    INDEX idx_name (name),
+    INDEX idx_is_deleted (is_deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_code VARCHAR(20) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    category_id INT NOT NULL,
+    size VARCHAR(20) NOT NULL,
+    color VARCHAR(30) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    quantity INT NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+    INDEX idx_product_code (product_code),
+    INDEX idx_name (name),
+    INDEX idx_category_id (category_id),
+    INDEX idx_is_deleted (is_deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+INSERT INTO users (username, email, password_hash, role) VALUES
+('admin', 'admin@clothingstore.com', 'scrypt:32768:8:1$rGOXQx8x8fYa5XvI$c8de8f9e5c6d5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d', 'admin');
+
+
+INSERT INTO users (username, email, password_hash, role) VALUES
+('user1', 'user1@clothingstore.com', 'scrypt:32768:8:1$rGOXQx8x8fYa5XvI$c8de8f9e5c6d5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d', 'user');
+
+
+INSERT INTO categories (name, description) VALUES
+('T-Shirts', 'Casual and formal t-shirts for all occasions'),
+('Pants', 'Trousers, jeans, and casual pants'),
+('Dresses', 'Elegant dresses for women'),
+('Jackets', 'Jackets and outerwear for all seasons'),
+('Shoes', 'Footwear collection');
+
+
+INSERT INTO products (product_code, name, description, category_id, size, color, price, quantity) VALUES
+('TSH001', 'Cotton Basic Tee', 'Comfortable 100% cotton t-shirt', 1, 'M', 'White', 299.99, 50),
+('TSH002', 'Premium V-Neck', 'Premium quality v-neck t-shirt', 1, 'L', 'Black', 399.99, 30),
+('PNT001', 'Denim Jeans', 'Classic blue denim jeans', 2, '32', 'Blue', 1299.99, 25),
+('PNT002', 'Chino Pants', 'Formal chino pants', 2, '34', 'Beige', 899.99, 20),
+('DRS001', 'Summer Dress', 'Floral summer dress', 3, 'S', 'Floral', 1499.99, 15),
+('DRS002', 'Evening Gown', 'Elegant evening gown', 3, 'M', 'Red', 2999.99, 8),
+('JKT001', 'Leather Jacket', 'Genuine leather jacket', 4, 'L', 'Brown', 4999.99, 10),
+('JKT002', 'Windbreaker', 'Lightweight windbreaker', 4, 'XL', 'Navy', 1899.99, 18),
+('SHO001', 'Canvas Sneakers', 'Comfortable canvas sneakers', 5, '9', 'White', 1599.99, 35),
+('SHO002', 'Formal Shoes', 'Leather formal shoes', 5, '10', 'Black', 2499.99, 12);
+

@@ -4,20 +4,6 @@ CREATE DATABASE IF NOT EXISTS clothing_store CHARACTER SET utf8mb4 COLLATE utf8m
 USE clothing_store;
 
 
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE,
-    INDEX idx_username (username),
-    INDEX idx_email (email),
-    INDEX idx_role (role)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
@@ -28,6 +14,18 @@ CREATE TABLE IF NOT EXISTS categories (
     INDEX idx_is_deleted (is_deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS suppliers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    contact_person VARCHAR(100),
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    address TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    INDEX idx_name (name),
+    INDEX idx_is_deleted (is_deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -35,6 +33,7 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     category_id INT NOT NULL,
+    supplier_id INT,
     size VARCHAR(20) NOT NULL,
     color VARCHAR(30) NOT NULL,
     price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
@@ -43,38 +42,102 @@ CREATE TABLE IF NOT EXISTS products (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     is_deleted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
     INDEX idx_product_code (product_code),
     INDEX idx_name (name),
     INDEX idx_category_id (category_id),
+    INDEX idx_supplier_id (supplier_id),
     INDEX idx_is_deleted (is_deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS customers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(20),
+    address TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    INDEX idx_name (first_name, last_name),
+    INDEX idx_is_deleted (is_deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO users (username, email, password_hash, role) VALUES
-('admin', 'admin@clothingstore.com', 'scrypt:32768:8:1$rGOXQx8x8fYa5XvI$c8de8f9e5c6d5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d', 'admin');
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0),
+    status ENUM('Pending','Processing','Completed','Cancelled') DEFAULT 'Pending',
+    is_deleted BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
+    INDEX idx_customer_id (customer_id),
+    INDEX idx_status (status),
+    INDEX idx_is_deleted (is_deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS order_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+    subtotal DECIMAL(10,2) GENERATED ALWAYS AS (quantity * price) STORED,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+    INDEX idx_order_id (order_id),
+    INDEX idx_product_id (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO users (username, email, password_hash, role) VALUES
-('user1', 'user1@clothingstore.com', 'scrypt:32768:8:1$rGOXQx8x8fYa5XvI$c8de8f9e5c6d5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d5c5d5f5e5d', 'user');
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('Admin','Staff') DEFAULT 'Staff',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_username (username),
+    INDEX idx_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT IGNORE INTO categories (name, description) VALUES
+('Top Picks', 'Best-selling items and recommended products'),
+('Blanks', 'Plain and minimalistic designs'),
+('New Arrivals', 'Latest clothing brand releases'),
+('Tees', 'Casual and graphic t-shirts'),
+('Bottoms', 'Pants, jeans, and shorts'),
+('Outerwear', 'Jackets, hoodies, and coats'),
+('Accessories', 'Caps, belts, and lifestyle items'),
+('Essentials', 'Everyday basics'),
+('Bundles', 'Discounted outfit sets'),
+('Gallery', 'Limited edition collections');
 
-INSERT INTO categories (name, description) VALUES
-('T-Shirts', 'Casual and formal t-shirts for all occasions'),
-('Pants', 'Trousers, jeans, and casual pants'),
-('Dresses', 'Elegant dresses for women'),
-('Jackets', 'Jackets and outerwear for all seasons'),
-('Shoes', 'Footwear collection');
+INSERT IGNORE INTO suppliers (name, contact_person, phone, email, address) VALUES
+('Metro Apparel Supply', 'John Santos', '09171234567', 'metroapparel@gmail.com', 'Makati City, PH'),
+('UrbanStyle Manufacturing', 'Maria Lopez', '09181234567', 'urbanstyle@clothing.ph', 'Quezon City, PH'),
+('Pacific Textiles', 'Angela Tan', '09201234567', 'pacifictextiles@gmail.com', 'Cebu City, PH');
 
+INSERT IGNORE INTO products (product_code, name, description, category_id, supplier_id, size, color, price, quantity) VALUES
+('TEE001', 'Essential Cotton Tee', 'Soft cotton shirt from the Essentials line', 4, 1, 'M', 'White', 299.99, 80),
+('TEE002', 'Premium Logo Tee', 'High-quality tee with embroidered logo', 4, 2, 'L', 'Black', 499.99, 60),
+('PNT001', 'Relaxed Fit Jeans', 'Durable denim for everyday wear', 5, 2, '32', 'Blue', 1299.99, 40),
+('JKT001', 'Classic Bomber Jacket', 'Lightweight bomber jacket for any season', 6, 1, 'L', 'Olive', 2799.99, 20),
+('ACC001', 'Minimalist Cap', 'Adjustable cotton cap with logo', 7, 3, 'One Size', 'Ash Grey', 499.99, 100),
+('BND001', 'Essential Outfit Bundle', 'Includes tee, shorts, and cap combo', 9, 1, 'M', 'Dune', 1899.99, 25);
 
-INSERT INTO products (product_code, name, description, category_id, size, color, price, quantity) VALUES
-('TSH001', 'Cotton Basic Tee', 'Comfortable 100% cotton t-shirt', 1, 'M', 'White', 299.99, 50),
-('TSH002', 'Premium V-Neck', 'Premium quality v-neck t-shirt', 1, 'L', 'Black', 399.99, 30),
-('PNT001', 'Denim Jeans', 'Classic blue denim jeans', 2, '32', 'Blue', 1299.99, 25),
-('PNT002', 'Chino Pants', 'Formal chino pants', 2, '34', 'Beige', 899.99, 20),
-('DRS001', 'Summer Dress', 'Floral summer dress', 3, 'S', 'Floral', 1499.99, 15),
-('DRS002', 'Evening Gown', 'Elegant evening gown', 3, 'M', 'Red', 2999.99, 8),
-('JKT001', 'Leather Jacket', 'Genuine leather jacket', 4, 'L', 'Brown', 4999.99, 10),
-('JKT002', 'Windbreaker', 'Lightweight windbreaker', 4, 'XL', 'Navy', 1899.99, 18),
-('SHO001', 'Canvas Sneakers', 'Comfortable canvas sneakers', 5, '9', 'White', 1599.99, 35),
-('SHO002', 'Formal Shoes', 'Leather formal shoes', 5, '10', 'Black', 2499.99, 12);
+INSERT IGNORE INTO customers (first_name, last_name, email, phone, address) VALUES
+('Luis', 'Castillo', 'luis.castillo@gmail.com', '09981234567', 'Manila, PH'),
+('Angela', 'Reyes', 'angela.reyes@gmail.com', '09171231234', 'Cavite, PH');
 
+INSERT IGNORE INTO orders (customer_id, total_amount, status) VALUES
+(1, 2599.97, 'Completed'),
+(2, 1899.99, 'Pending');
+
+INSERT IGNORE INTO order_details (order_id, product_id, quantity, price) VALUES
+(1, 1, 2, 299.99),
+(1, 3, 1, 1299.99),
+(2, 6, 1, 1899.99);
+
+INSERT IGNORE INTO users (username, password_hash, role) VALUES
+('admin', 'hashed_password_example', 'Admin'),
+('staff', 'hashed_password_example', 'Staff');

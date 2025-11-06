@@ -8,7 +8,6 @@ from io import StringIO, BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -20,7 +19,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-
+# Models
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -28,7 +27,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='user')
+    role = db.Column(db.String(20), nullable=False, default='user')  # 'admin' or 'user'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
 
@@ -77,7 +76,7 @@ class Product(db.Model):
         return f'<Product {self.product_code} - {self.name}>'
 
 
-
+# Authentication Decorators
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -105,7 +104,7 @@ def admin_required(f):
     return decorated_function
 
 
-
+# Validation Functions
 def validate_category(name, current_id=None):
     errors = []
 
@@ -162,7 +161,6 @@ def validate_product(product_code, name, category_id, size, color, price, quanti
     return errors
 
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
@@ -175,6 +173,11 @@ def login():
         user = User.query.filter_by(username=username, is_active=True).first()
 
         if user and user.check_password(password):
+            # Redirect admins to admin login
+            if user.role == 'admin':
+                flash('Please use Admin Login for administrator accounts.', 'warning')
+                return redirect(url_for('admin_login'))
+
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
@@ -184,6 +187,37 @@ def login():
             flash('Invalid username or password.', 'danger')
 
     return render_template('auth/login.html')
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and user.role == 'admin':
+            return redirect(url_for('dashboard'))
+        else:
+            session.clear()
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+
+        user = User.query.filter_by(username=username, is_active=True).first()
+
+        if user and user.check_password(password):
+            if user.role != 'admin':
+                flash('Access Denied: Admin privileges required.', 'danger')
+                return render_template('auth/admin_login.html')
+
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['role'] = user.role
+            flash(f'Admin access granted. Welcome, {user.username}!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Invalid admin credentials.', 'danger')
+
+    return render_template('auth/admin_login.html')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -241,13 +275,11 @@ def logout():
     return redirect(url_for('login'))
 
 
-
 @app.route('/')
 def index():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return redirect(url_for('dashboard'))
-
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
 
 
 @app.route('/categories')
@@ -325,7 +357,6 @@ def delete_category(id):
 
     flash(f'Category "{category.name}" deleted successfully!', 'success')
     return redirect(url_for('list_categories'))
-
 
 
 @app.route('/products')
@@ -518,7 +549,6 @@ def dashboard():
                            low_stock=low_stock,
                            total_value=total_value,
                            recent_products=recent_products)
-
 
 
 @app.route('/users')

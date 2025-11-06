@@ -76,7 +76,7 @@ class Product(db.Model):
         return f'<Product {self.product_code} - {self.name}>'
 
 
-# Authentication Decorators
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

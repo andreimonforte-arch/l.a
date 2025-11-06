@@ -19,7 +19,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# Models
+
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -104,7 +104,7 @@ def admin_required(f):
     return decorated_function
 
 
-# Validation Functions
+
 def validate_category(name, current_id=None):
     errors = []
 
@@ -592,3 +592,4 @@ def deactivate_user(id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+

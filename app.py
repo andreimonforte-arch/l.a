@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Enum
 from dotenv import load_dotenv
 import os
 from datetime import datetime
@@ -27,7 +28,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='user')  # 'admin' or 'user'
+    role = db.Column(db.String(20), nullable=False, default='User')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
 
@@ -96,7 +97,7 @@ def admin_required(f):
             return redirect(url_for('login'))
 
         user = User.query.get(session['user_id'])
-        if not user or user.role != 'admin':
+        if not user or user.role != 'Admin':  # Changed: 'Admin' instead of 'admin'
             flash('Admin access required for this action.', 'danger')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
@@ -173,8 +174,8 @@ def login():
         user = User.query.filter_by(username=username, is_active=True).first()
 
         if user and user.check_password(password):
-            # Redirect admins to admin login
-            if user.role == 'admin':
+
+            if user.role == 'Admin':  # Changed: 'Admin' instead of 'admin'
                 flash('Please use Admin Login for administrator accounts.', 'warning')
                 return redirect(url_for('admin_login'))
 
@@ -193,7 +194,7 @@ def login():
 def admin_login():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
-        if user and user.role == 'admin':
+        if user and user.role == 'Admin':  # Changed: 'Admin' instead of 'admin'
             return redirect(url_for('dashboard'))
         else:
             session.clear()
@@ -205,7 +206,7 @@ def admin_login():
         user = User.query.filter_by(username=username, is_active=True).first()
 
         if user and user.check_password(password):
-            if user.role != 'admin':
+            if user.role != 'Admin':  # Changed: 'Admin' instead of 'admin'
                 flash('Access Denied: Admin privileges required.', 'danger')
                 return render_template('auth/admin_login.html')
 
@@ -256,7 +257,7 @@ def register():
                 flash(error, 'danger')
             return render_template('auth/register.html', form_data=request.form)
 
-        new_user = User(username=username, email=email, role='user')
+        new_user = User(username=username, email=email, role='User')  # Changed: 'User' instead of 'user'
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
@@ -567,7 +568,7 @@ def toggle_user_role(id):
         flash('You cannot change your own role.', 'danger')
         return redirect(url_for('list_users'))
 
-    user.role = 'user' if user.role == 'admin' else 'admin'
+    user.role = 'User' if user.role == 'Admin' else 'Admin'
     db.session.commit()
 
     flash(f'User {user.username} role changed to {user.role}.', 'success')
@@ -592,4 +593,3 @@ def deactivate_user(id):
 
 if __name__ == '__main__':
     app.run(debug=True)
-

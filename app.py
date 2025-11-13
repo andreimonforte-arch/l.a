@@ -1,6 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Enum
 from dotenv import load_dotenv
 import os
 from datetime import datetime
@@ -18,7 +17,6 @@ app.config[
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-
 
 
 class User(db.Model):
@@ -77,6 +75,55 @@ class Product(db.Model):
         return f'<Product {self.product_code} - {self.name}>'
 
 
+class Customer(db.Model):
+    __tablename__ = 'customers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100), unique=True)
+    phone = db.Column(db.String(20))
+    address = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_deleted = db.Column(db.Boolean, default=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+
+    orders = db.relationship('Order', backref='customer', lazy=True)
+
+    def __repr__(self):
+        return f'<Customer {self.first_name} {self.last_name}>'
+
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    order_date = db.Column(db.DateTime, default=datetime.utcnow)
+    total_amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='Pending')
+    is_deleted = db.Column(db.Boolean, default=False)
+
+    order_details = db.relationship('OrderDetail', backref='order', lazy=True)
+
+    def __repr__(self):
+        return f'<Order {self.id} - {self.status}>'
+
+
+class OrderDetail(db.Model):
+    __tablename__ = 'order_details'
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+
+    product = db.relationship('Product', backref='order_details', lazy=True)
+
+    def __repr__(self):
+        return f'<OrderDetail {self.id}>'
+
 
 def login_required(f):
     @wraps(f)
@@ -97,13 +144,28 @@ def admin_required(f):
             return redirect(url_for('login'))
 
         user = User.query.get(session['user_id'])
-        if not user or user.role != 'Admin':  # Changed: 'Admin' instead of 'admin'
+        if not user or user.role != 'Admin':
             flash('Admin access required for this action.', 'danger')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
 
     return decorated_function
 
+
+def get_cart():
+    return session.get('cart', {})
+
+
+def save_cart(cart):
+    session['cart'] = cart
+    session.modified = True
+
+
+def calculate_cart_total(cart):
+    total = 0
+    for item_id, item_data in cart.items():
+        total += item_data['price'] * item_data['quantity']
+    return total
 
 
 def validate_category(name, current_id=None):
@@ -175,7 +237,7 @@ def login():
 
         if user and user.check_password(password):
 
-            if user.role == 'Admin':  # Changed: 'Admin' instead of 'admin'
+            if user.role == 'Admin':
                 flash('Please use Admin Login for administrator accounts.', 'warning')
                 return redirect(url_for('admin_login'))
 
@@ -183,7 +245,8 @@ def login():
             session['username'] = user.username
             session['role'] = user.role
             flash(f'Welcome back, {user.username}!', 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('shop'))
+
         else:
             flash('Invalid username or password.', 'danger')
 
@@ -194,7 +257,7 @@ def login():
 def admin_login():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
-        if user and user.role == 'Admin':  # Changed: 'Admin' instead of 'admin'
+        if user and user.role == 'Admin':
             return redirect(url_for('dashboard'))
         else:
             session.clear()
@@ -206,7 +269,7 @@ def admin_login():
         user = User.query.filter_by(username=username, is_active=True).first()
 
         if user and user.check_password(password):
-            if user.role != 'Admin':  # Changed: 'Admin' instead of 'admin'
+            if user.role != 'Admin':
                 flash('Access Denied: Admin privileges required.', 'danger')
                 return render_template('auth/admin_login.html')
 
@@ -257,7 +320,7 @@ def register():
                 flash(error, 'danger')
             return render_template('auth/register.html', form_data=request.form)
 
-        new_user = User(username=username, email=email, role='User')  # Changed: 'User' instead of 'user'
+        new_user = User(username=username, email=email, role='User')
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
@@ -279,8 +342,338 @@ def logout():
 @app.route('/')
 def index():
     if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+        if session.get('role') == 'Admin':
+            return redirect(url_for('dashboard'))
+        else:
+            return redirect(url_for('shop'))
     return render_template('landing.html')
+
+
+@app.route('/shop')
+@login_required
+def shop():
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    category_filter = request.args.get('category', '')
+    per_page = 12
+
+    query = Product.query.filter_by(is_deleted=False)
+
+    if search:
+        query = query.filter(
+            (Product.product_code.like(f'%{search}%')) |
+            (Product.name.like(f'%{search}%')) |
+            (Product.color.like(f'%{search}%')) |
+            (Product.size.like(f'%{search}%'))
+        )
+
+    if category_filter:
+        query = query.filter_by(category_id=int(category_filter))
+
+    query = query.order_by(Product.name)
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    categories = Category.query.filter_by(is_deleted=False).order_by(Category.name).all()
+    cart = get_cart()
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    return render_template('shop/browse.html',
+                           products=pagination.items,
+                           pagination=pagination,
+                           search=search,
+                           category_filter=category_filter,
+                           categories=categories,
+                           cart_count=cart_count)
+
+
+@app.route('/shop/product/<int:id>')
+@login_required
+def shop_product_detail(id):
+    product = Product.query.get_or_404(id)
+    if product.is_deleted:
+        flash('Product not found.', 'danger')
+        return redirect(url_for('shop'))
+
+    cart = get_cart()
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    return render_template('shop/product_detail.html', product=product, cart_count=cart_count)
+
+
+@app.route('/cart/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    product = Product.query.get_or_404(product_id)
+
+    if product.is_deleted:
+        return jsonify({'success': False, 'message': 'Product not available'}), 404
+
+    quantity = int(request.form.get('quantity', 1))
+
+    if quantity <= 0:
+        return jsonify({'success': False, 'message': 'Invalid quantity'}), 400
+
+    if quantity > product.quantity:
+        return jsonify({'success': False, 'message': f'Only {product.quantity} items available'}), 400
+
+    cart = get_cart()
+
+    item_id = str(product_id)
+    if item_id in cart:
+        new_quantity = cart[item_id]['quantity'] + quantity
+        if new_quantity > product.quantity:
+            return jsonify(
+                {'success': False, 'message': f'Cannot add more. Only {product.quantity} items available'}), 400
+        cart[item_id]['quantity'] = new_quantity
+    else:
+        cart[item_id] = {
+            'product_id': product.id,
+            'name': product.name,
+            'price': product.price,
+            'quantity': quantity,
+            'product_code': product.product_code,
+            'size': product.size,
+            'color': product.color
+        }
+
+    save_cart(cart)
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    flash(f'Added {product.name} to cart!', 'success')
+    return jsonify({'success': True, 'message': 'Added to cart', 'cart_count': cart_count})
+
+
+@app.route('/cart')
+@login_required
+def view_cart():
+    cart = get_cart()
+    cart_items = []
+
+    for item_id, item_data in cart.items():
+        product = Product.query.get(int(item_id))
+        if product and not product.is_deleted:
+            cart_items.append({
+                'product': product,
+                'quantity': item_data['quantity'],
+                'subtotal': item_data['price'] * item_data['quantity']
+            })
+
+    total = calculate_cart_total(cart)
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    return render_template('shop/cart.html', cart_items=cart_items, total=total, cart_count=cart_count)
+
+
+@app.route('/cart/update/<int:product_id>', methods=['POST'])
+@login_required
+def update_cart(product_id):
+    cart = get_cart()
+    item_id = str(product_id)
+
+    if item_id not in cart:
+        return jsonify({'success': False, 'message': 'Item not in cart'}), 404
+
+    quantity = int(request.form.get('quantity', 0))
+    product = Product.query.get(product_id)
+
+    if quantity <= 0:
+        del cart[item_id]
+        save_cart(cart)
+        return jsonify({'success': True, 'message': 'Item removed from cart'})
+
+    if quantity > product.quantity:
+        return jsonify({'success': False, 'message': f'Only {product.quantity} items available'}), 400
+
+    cart[item_id]['quantity'] = quantity
+    save_cart(cart)
+
+    subtotal = cart[item_id]['price'] * quantity
+    total = calculate_cart_total(cart)
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    return jsonify({
+        'success': True,
+        'subtotal': subtotal,
+        'total': total,
+        'cart_count': cart_count
+    })
+
+
+@app.route('/cart/remove/<int:product_id>', methods=['POST'])
+@login_required
+def remove_from_cart(product_id):
+    """Remove item from cart"""
+    cart = get_cart()
+    item_id = str(product_id)
+
+    if item_id in cart:
+        del cart[item_id]
+        save_cart(cart)
+        flash('Item removed from cart.', 'info')
+
+    return redirect(url_for('view_cart'))
+
+
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    cart = get_cart()
+
+    if not cart:
+        flash('Your cart is empty.', 'warning')
+        return redirect(url_for('shop'))
+
+    cart_items = []
+    for item_id, item_data in cart.items():
+        product = Product.query.get(int(item_id))
+        if product and not product.is_deleted:
+            cart_items.append({
+                'product': product,
+                'quantity': item_data['quantity'],
+                'subtotal': item_data['price'] * item_data['quantity']
+            })
+
+    total = calculate_cart_total(cart)
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    user = User.query.get(session['user_id'])
+    customer = Customer.query.filter_by(user_id=user.id, is_deleted=False).first()
+
+    if request.method == 'POST':
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        address = request.form.get('address', '').strip()
+
+        errors = []
+
+        if not first_name or not last_name:
+            errors.append('First name and last name are required.')
+
+        if not email or '@' not in email:
+            errors.append('Valid email is required.')
+
+        if not phone:
+            errors.append('Phone number is required.')
+
+        if not address:
+            errors.append('Delivery address is required.')
+
+        if errors:
+            for error in errors:
+                flash(error, 'danger')
+            return render_template('shop/checkout.html',
+                                   cart_items=cart_items,
+                                   total=total,
+                                   cart_count=cart_count,
+                                   form_data=request.form)
+
+        if not customer:
+            customer = Customer(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                phone=phone,
+                address=address,
+                user_id=user.id
+            )
+            db.session.add(customer)
+        else:
+            customer.first_name = first_name
+            customer.last_name = last_name
+            customer.email = email
+            customer.phone = phone
+            customer.address = address
+
+        db.session.commit()
+
+        order = Order(
+            customer_id=customer.id,
+            total_amount=total,
+            status='Pending'
+        )
+        db.session.add(order)
+        db.session.flush()
+
+        for item_id, item_data in cart.items():
+            product = Product.query.get(int(item_id))
+
+            if product.quantity < item_data['quantity']:
+                db.session.rollback()
+                flash(f'Insufficient stock for {product.name}', 'danger')
+                return redirect(url_for('view_cart'))
+
+            order_detail = OrderDetail(
+                order_id=order.id,
+                product_id=product.id,
+                quantity=item_data['quantity'],
+                price=item_data['price']
+            )
+            db.session.add(order_detail)
+
+            product.quantity -= item_data['quantity']
+
+        db.session.commit()
+
+        session.pop('cart', None)
+
+        flash(f'Order #{order.id} placed successfully!', 'success')
+        return redirect(url_for('order_confirmation', order_id=order.id))
+
+    return render_template('shop/checkout.html',
+                           cart_items=cart_items,
+                           total=total,
+                           cart_count=cart_count,
+                           customer=customer)
+
+
+@app.route('/order/confirmation/<int:order_id>')
+@login_required
+def order_confirmation(order_id):
+    order = Order.query.get_or_404(order_id)
+    user = User.query.get(session['user_id'])
+    customer = Customer.query.get(order.customer_id)
+
+    if customer.user_id != user.id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('shop'))
+
+    return render_template('shop/order_confirmation.html', order=order)
+
+
+@app.route('/orders')
+@login_required
+def my_orders():
+    user = User.query.get(session['user_id'])
+    customer = Customer.query.filter_by(user_id=user.id, is_deleted=False).first()
+
+    cart = get_cart()
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    orders = []
+    if customer:
+        orders = Order.query.filter_by(customer_id=customer.id, is_deleted=False).order_by(
+            Order.order_date.desc()).all()
+
+    return render_template('shop/orders.html', orders=orders, cart_count=cart_count)
+
+
+@app.route('/order/<int:order_id>')
+@login_required
+def order_detail(order_id):
+    order = Order.query.get_or_404(order_id)
+    user = User.query.get(session['user_id'])
+    customer = Customer.query.get(order.customer_id)
+
+    if customer.user_id != user.id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('my_orders'))
+
+    cart = get_cart()
+    cart_count = sum(item['quantity'] for item in cart.values())
+
+    return render_template('shop/order_detail.html', order=order, cart_count=cart_count)
 
 
 @app.route('/categories')
@@ -434,7 +827,6 @@ def create_product():
         return redirect(url_for('list_products'))
 
     return render_template('products/create.html', categories=categories)
-
 
 @app.route('/products/<int:id>')
 @login_required

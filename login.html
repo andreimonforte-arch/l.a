@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Clothing Store</title>
+    <title>User Login - Ma Locozz Clothing Store</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -56,6 +56,7 @@
             padding: 12px;
             font-weight: bold;
             letter-spacing: 1px;
+            color: white;
         }
 
         .btn-login:hover {
@@ -85,6 +86,17 @@
             position: relative;
             color: #999;
         }
+
+        .admin-link {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .admin-link:hover {
+            background: #c82333;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -92,12 +104,11 @@
         <div class="login-card">
             <div class="login-header">
                 <i class="fas fa-store"></i>
-                <h2 class="mb-0">Clothing Store</h2>
-                <p class="mb-0">Stock Inventory Management System</p>
+                <h2 class="mb-0"> Ma Locozz Clothing Brand </h2>
+                <p class="mb-0">Login</p>
             </div>
 
             <div class="login-body">
-
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
@@ -114,17 +125,19 @@
                         <label for="username" class="form-label">
                             <i class="fas fa-user"></i> Username
                         </label>
-                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        <input type="text" class="form-control" id="username" name="username"
+                               placeholder="Enter your username" required autofocus>
                     </div>
 
                     <div class="mb-3">
                         <label for="password" class="form-label">
                             <i class="fas fa-lock"></i> Password
                         </label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password" class="form-control" id="password" name="password"
+                               placeholder="Enter your password" required>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-login w-100">
+                    <button type="submit" class="btn btn-login w-100">
                         <i class="fas fa-sign-in-alt"></i> LOGIN
                     </button>
                 </form>
@@ -133,21 +146,20 @@
                     <span>OR</span>
                 </div>
 
-                <a href="{{ url_for('register') }}" class="btn btn-outline-secondary w-100">
+                <a href="{{ url_for('register') }}" class="btn btn-outline-secondary w-100 mb-2">
                     <i class="fas fa-user-plus"></i> Create New Account
                 </a>
 
-                <div class="mt-4 text-center">
-                    <small class="text-muted">
-                        <strong>Login Accounts</strong><br>
+                <a href="{{ url_for('admin_login') }}" class="btn admin-link w-100">
+                    <i class="fas fa-user-shield"></i> Admin Login
+                </a>
 
-                    </small>
-                </div>
+
             </div>
         </div>
 
         <div class="text-center mt-3 text-white">
-            <small>&copy; 2025 Clothing Store. All rights reserved.</small>
+            <small>&copy; 2025 Ma Locozz Clothing Store. All rights reserved.</small>
         </div>
     </div>
 

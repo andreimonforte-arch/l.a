@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-history"></i> My Orders</h2>
+        <a href="{{ url_for('shop') }}" class="btn btn-primary">
+            <i class="fas fa-shopping-bag"></i> Continue Shopping
+        </a>
+    </div>
+
+    {% if orders %}
+    <div class="row">
+        {% for order in orders %}
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <p class="mb-0"><strong>Order #{{ order.id }}</strong></p>
+                            <small class="text-muted">{{ order.order_date.strftime('%B %d, %Y') }}</small>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-0"><small class="text-muted">Status</small></p>
+                            {% if order.status == 'Pending' %}
+                            <span class="badge bg-warning text-dark">{{ order.status }}</span>
+                            {% elif order.status == 'Processing' %}
+                            <span class="badge bg-info">{{ order.status }}</span>
+                            {% elif order.status == 'Completed' %}
+                            <span class="badge bg-success">{{ order.status }}</span>
+                            {% elif order.status == 'Cancelled' %}
+                            <span class="badge bg-danger">{{ order.status }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ order.status }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-0"><small class="text-muted">Total</small></p>
+                            <h5 class="mb-0 text-success">₱{{ "%.2f"|format(order.total_amount) }}</h5>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for detail in order.order_details[:3] %}
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-tshirt fa-2x text-primary me-3"></i>
+                                <div>
+                                    <p class="mb-0"><strong>{{ detail.product.name }}</strong></p>
+                                    <small class="text-muted">Qty: {{ detail.quantity }} × ₱{{ "%.2f"|format(detail.price) }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if order.order_details|length > 3 %}
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="alert alert-info mb-0 py-2 px-3">
+                                    <i class="fas fa-plus-circle"></i> +{{ order.order_details|length - 3 }} more items
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-bag fa-5x text-muted mb-4"></i>
+        <h3>No orders yet</h3>
+        <p class="text-muted">Start shopping to place your first order!</p>
+        <a href="{{ url_for('shop') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag"></i> Start Shopping
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Shop - Browse Products{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-shopping-bag"></i> Browse Products</h2>
+        <a href="{{ url_for('view_cart') }}" class="btn btn-primary">
+            <i class="fas fa-shopping-cart"></i> Cart 
+            <span class="badge bg-light text-dark">{{ cart_count }}</span>
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('shop') }}" class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="search" 
+                           placeholder="Search by code, name, color, or size..." 
+                           value="{{ search }}">
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="category">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if category_filter == cat.id|string %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if products %}
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        {% for product in products %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-shadow">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-tshirt fa-4x text-primary"></i>
+                    </div>
+                    <span class="badge bg-info mb-2">{{ product.category.name }}</span>
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="text-muted small">{{ product.product_code }}</p>
+                    <p class="card-text text-truncate">{{ product.description or 'No description' }}</p>
+                    
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <small class="text-muted">Size:</small>
+                            <span class="badge bg-secondary">{{ product.size }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Color:</small>
+                            <span class="badge bg-secondary">{{ product.color }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0 text-success">₱{{ "%.2f"|format(product.price) }}</h4>
+                        {% if product.quantity > 0 %}
+                        <span class="badge bg-success">In Stock: {{ product.quantity }}</span>
+                        {% else %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('shop_product_detail', id=product.id) }}" 
+                           class="btn btn-outline-primary btn-sm flex-grow-1">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        {% if product.quantity > 0 %}
+                        <button class="btn btn-success btn-sm flex-grow-1 add-to-cart" 
+                                data-product-id="{{ product.id }}">
+                            <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                        {% else %}
+                        <button class="btn btn-secondary btn-sm flex-grow-1" disabled>
+                            <i class="fas fa-times"></i> Unavailable
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('shop', page=pagination.prev_num, search=search, category=category_filter) }}">
+                    Previous
+                </a>
+            </li>
+            
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('shop', page=page_num, search=search, category=category_filter) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('shop', page=pagination.next_num, search=search, category=category_filter) }}">
+                    Next
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle fa-3x mb-3"></i>
+        <h4>No products found</h4>
+        <p>Try adjusting your search or filter criteria.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const formData = new FormData();
+            formData.append('quantity', 1);
+            
+            fetch(`/cart/add/${productId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update cart count
+                    const cartBadge = document.querySelector('.badge.bg-light');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                    }
+                    
+                    // Show success animation
+                    this.innerHTML = '<i class="fas fa-check"></i> Added!';
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-primary');
+                    
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
+                        this.classList.remove('btn-primary');
+                        this.classList.add('btn-success');
+                    }, 2000);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to add item to cart');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

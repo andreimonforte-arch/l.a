@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Order Confirmation - Ma Locozz Clothing Brand{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Success Header -->
+    <div class="text-center mb-5">
+        <div class="success-icon mb-3">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h1 class="display-5 fw-bold mb-2">Order Confirmed!</h1>
+        <p class="text-muted fs-5">Thank you for your purchase</p>
+        <p class="text-muted">Order #{{ order.id }}</p>
+    </div>
+
+    <div class="row">
+        <!-- Order Details -->
+        <div class="col-lg-8 mb-4">
+            <!-- Order Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th class="text-end">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detail in order.order_details %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ detail.product.name }}</strong><br>
+                                        <small class="text-muted">
+                                            {{ detail.product.product_code }} |
+                                            Size: {{ detail.product.size }} |
+                                            Color: {{ detail.product.color }}
+                                        </small>
+                                    </td>
+                                    <td>{{ detail.quantity }}</td>
+                                    <td class="text-end">₱{{ "%.2f"|format(detail.price * detail.quantity) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="border-top">
+                                <tr class="fw-bold fs-5">
+                                    <td colspan="2" class="text-end">Total:</td>
+                                    <td class="text-end text-success">₱{{ "%.2f"|format(order.total_amount) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>{{ order.customer.first_name }} {{ order.customer.last_name }}</strong></p>
+                    {% if order.customer.email %}
+                    <p class="mb-1"><i class="fas fa-envelope"></i> {{ order.customer.email }}</p>
+                    {% endif %}
+                    {% if order.customer.phone %}
+                    <p class="mb-1"><i class="fas fa-phone"></i> {{ order.customer.phone }}</p>
+                    {% endif %}
+                    {% if order.customer.address %}
+                    <p class="mb-0"><i class="fas fa-map-marker-alt"></i> {{ order.customer.address }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Info Sidebar -->
+        <div class="col-lg-4">
+            <!-- Order Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="status-icon mb-3">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h5>Order Status</h5>
+                    <span class="badge bg-info fs-6 px-3 py-2">{{ order.status }}</span>
+                    <p class="text-muted mt-3 mb-0 small">
+                        Placed on {{ order.order_date.strftime('%B %d, %Y') }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-map-marker-alt"></i> Track Order
+                    </a>
+                    <a href="{{ url_for('my_orders') }}" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="fas fa-list"></i> View All Orders
+                    </a>
+                    <a href="{{ url_for('shop') }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-shopping-bag"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.success-icon {
+    font-size: 5rem;
+    color: #28a745;
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.status-icon {
+    font-size: 2.5rem;
+    color: #667eea;
+}
+
+.card {
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.table th {
+    border-top: none;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

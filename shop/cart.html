@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-shopping-cart"></i> Shopping Cart</h2>
+        <a href="{{ url_for('shop') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Continue Shopping
+        </a>
+    </div>
+
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% for item in cart_items %}
+                    <div class="row align-items-center border-bottom py-3" id="cart-item-{{ item.product.id }}">
+                        <div class="col-md-2 text-center">
+                            <i class="fas fa-tshirt fa-3x text-primary"></i>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="mb-1">{{ item.product.name }}</h5>
+                            <p class="text-muted small mb-1">{{ item.product.product_code }}</p>
+                            <span class="badge bg-secondary">{{ item.product.size }}</span>
+                            <span class="badge bg-secondary">{{ item.product.color }}</span>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="mb-0 fw-bold">₱{{ "%.2f"|format(item.product.price) }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="input-group input-group-sm">
+                                <button class="btn btn-outline-secondary qty-btn" type="button" 
+                                        data-action="decrease" data-product-id="{{ item.product.id }}">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" class="form-control text-center qty-input" 
+                                       value="{{ item.quantity }}" min="1" max="{{ item.product.quantity }}"
+                                       data-product-id="{{ item.product.id }}" readonly>
+                                <button class="btn btn-outline-secondary qty-btn" type="button" 
+                                        data-action="increase" data-product-id="{{ item.product.id }}"
+                                        {% if item.quantity >= item.product.quantity %}disabled{% endif %}>
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Max: {{ item.product.quantity }}</small>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="mb-0 fw-bold subtotal" id="subtotal-{{ item.product.id }}">
+                                ₱{{ "%.2f"|format(item.subtotal) }}
+                            </p>
+                            <form method="POST" action="{{ url_for('remove_from_cart', product_id=item.product.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('Remove this item?');">
+                                <button type="submit" class="btn btn-link btn-sm text-danger p-0">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-receipt"></i> Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="cart-total">₱{{ "%.2f"|format(total) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping:</span>
+                        <span class="text-success">FREE</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5>Total:</h5>
+                        <h5 class="text-success" id="final-total">₱{{ "%.2f"|format(total) }}</h5>
+                    </div>
+                    <a href="{{ url_for('checkout') }}" class="btn btn-success w-100 btn-lg">
+                        <i class="fas fa-lock"></i> Proceed to Checkout
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h6><i class="fas fa-shield-alt text-success"></i> Secure Checkout</h6>
+                    <p class="small text-muted mb-0">Your payment information is protected with industry-standard encryption.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+        <h3>Your cart is empty</h3>
+        <p class="text-muted">Add some items to your cart to get started!</p>
+        <a href="{{ url_for('shop') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag"></i> Start Shopping
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const qtyButtons = document.querySelectorAll('.qty-btn');
+
+    qtyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const action = this.dataset.action;
+            const input = document.querySelector(`.qty-input[data-product-id="${productId}"]`);
+            let quantity = parseInt(input.value);
+
+            if (action === 'increase') {
+                quantity++;
+            } else if (action === 'decrease') {
+                quantity--;
+            }
+
+            if (quantity < 1) {
+                if (confirm('Remove this item from cart?')) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/cart/remove/${productId}`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+                return;
+            }
+
+            updateCart(productId, quantity);
+        });
+    });
+
+    function updateCart(productId, quantity) {
+        const formData = new FormData();
+        formData.append('quantity', quantity);
+
+        fetch(`/cart/update/${productId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const input = document.querySelector(`.qty-input[data-product-id="${productId}"]`);
+                input.value = quantity;
+
+                const subtotalEl = document.getElementById(`subtotal-${productId}`);
+                subtotalEl.textContent = `₱${data.subtotal.toFixed(2)}`;
+
+                document.getElementById('cart-total').textContent = `₱${data.total.toFixed(2)}`;
+                document.getElementById('final-total').textContent = `₱${data.total.toFixed(2)}`;
+
+                const cartBadge = document.querySelector('.badge.bg-light');
+                if (cartBadge) {
+                    cartBadge.textContent = data.cart_count;
+                }
+
+                const maxQty = parseInt(input.getAttribute('max'));
+                const increaseBtn = document.querySelector(`.qty-btn[data-action="increase"][data-product-id="${productId}"]`);
+                if (quantity >= maxQty) {
+                    increaseBtn.disabled = true;
+                } else {
+                    increaseBtn.disabled = false;
+                }
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update cart');
+        });
+    }
+});
+</script>
+{% endblock %}

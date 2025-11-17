@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} - Clothing Inventory{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-receipt"></i> Order #{{ order.id }}</h2>
+            <p class="text-muted mb-0">Placed on {{ order.order_date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('my_orders') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Orders
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-box"></i> Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Details</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Price</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detail in order.order_details %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-tshirt fa-2x text-primary me-3"></i>
+                                            <div>
+                                                <strong>{{ detail.product.name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ detail.product.product_code }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary me-1">{{ detail.product.size }}</span>
+                                        <span class="badge bg-info">{{ detail.product.color }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{ detail.quantity }}</span>
+                                    </td>
+                                    <td class="text-end">₱{{ "%.2f"|format(detail.price) }}</td>
+                                    <td class="text-end">
+                                        <strong>₱{{ "%.2f"|format(detail.price * detail.quantity) }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <td colspan="4" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td class="text-end">
+                                        <h5 class="text-primary mb-0">₱{{ "%.2f"|format(order.total_amount) }}</h5>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Order Status</h6>
+                </div>
+                <div class="card-body text-center">
+                    {% if order.status == 'Pending' %}
+                    <span class="badge bg-warning text-dark p-3" style="font-size: 1.1rem;">
+                        <i class="fas fa-clock"></i> Pending
+                    </span>
+                    {% elif order.status == 'Processing' %}
+                    <span class="badge bg-info p-3" style="font-size: 1.1rem;">
+                        <i class="fas fa-cog fa-spin"></i> Processing
+                    </span>
+                    {% elif order.status == 'Shipped' %}
+                    <span class="badge bg-primary p-3" style="font-size: 1.1rem;">
+                        <i class="fas fa-shipping-fast"></i> Shipped
+                    </span>
+                    {% elif order.status == 'Delivered' %}
+                    <span class="badge bg-success p-3" style="font-size: 1.1rem;">
+                        <i class="fas fa-check-circle"></i> Delivered
+                    </span>
+                    {% elif order.status == 'Cancelled' %}
+                    <span class="badge bg-danger p-3" style="font-size: 1.1rem;">
+                        <i class="fas fa-times-circle"></i> Cancelled
+                    </span>
+                    {% else %}
+                    <span class="badge bg-secondary p-3" style="font-size: 1.1rem;">
+                        {{ order.status }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-user"></i> Customer Information</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Name:</strong><br>
+                        {{ order.customer.first_name }} {{ order.customer.last_name }}
+                    </p>
+                    <p class="mb-2">
+                        <strong>Email:</strong><br>
+                        <a href="mailto:{{ order.customer.email }}">{{ order.customer.email }}</a>
+                    </p>
+                    <p class="mb-2">
+                        <strong>Phone:</strong><br>
+                        {{ order.customer.phone }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Address:</strong><br>
+                        {{ order.customer.address }}
+                    </p>
+                </div>
+            </div>
+
+            {% if order.status in ['Pending', 'Processing'] %}
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-ban"></i> Cancel Order</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        <small>You can cancel this order while it's still in {{ order.status }} status.</small>
+                    </p>
+                    <form method="POST" action="{{ url_for('cancel_order', order_id=order.id) }}"
+                          onsubmit="return confirm('Are you sure you want to cancel this order? This action cannot be undone.');">
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="fas fa-times"></i> Cancel Order
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% elif order.status == 'Cancelled' %}
+            <div class="alert alert-danger">
+                <i class="fas fa-info-circle"></i> This order has been cancelled.
+            </div>
+            {% elif order.status == 'Delivered' %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> This order has been delivered successfully!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

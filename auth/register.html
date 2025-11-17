@@ -1,152 +1,286 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Ma Locozz Clothing Brand </title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px 0;
-        }
+{% extends "base.html" %}
 
-        .register-container {
-            max-width: 500px;
-            width: 100%;
-            padding: 20px;
-        }
+{% block title %}Register - Ma Locozz Clothing{% endblock %}
 
-        .register-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-
-        .register-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .register-header i {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-
-        .register-body {
-            padding: 40px;
-        }
-
-        .form-control:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-
-        .btn-register {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-            border: none;
-            padding: 12px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-    </style>
-</head>
-<body>
-    <div class="register-container">
-        <div class="register-card">
-            <div class="register-header">
-                <i class="fas fa-user-plus"></i>
-                <h2 class="mb-0">Create Account</h2>
-                <p class="mb-0">Join our inventory system</p>
-            </div>
-
-            <div class="register-body">
-
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <form method="POST" action="{{ url_for('register') }}">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">
-                            <i class="fas fa-user"></i> Username *
-                        </label>
-                        <input type="text" class="form-control" id="username" name="username"
-                               value="{{ form_data.username if form_data else '' }}" required autofocus>
-                        <small class="form-text text-muted">3-50 characters</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="email" class="form-label">
-                            <i class="fas fa-envelope"></i> Email Address *
-                        </label>
-                        <input type="email" class="form-control" id="email" name="email"
-                               value="{{ form_data.email if form_data else '' }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">
-                            <i class="fas fa-lock"></i> Password *
-                        </label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                        <small class="form-text text-muted">At least 6 characters</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">
-                            <i class="fas fa-lock"></i> Confirm Password *
-                        </label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-register w-100">
-                        <i class="fas fa-user-plus"></i> CREATE ACCOUNT
-                    </button>
-                </form>
-
-                <div class="text-center mt-3">
-                    <p class="text-muted mb-0">Already have an account?</p>
-                    <a href="{{ url_for('login') }}" class="btn btn-link">
-                        <i class="fas fa-sign-in-alt"></i> Login Here
-                    </a>
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </h4>
                 </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user"></i> Username
+                            </label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="username"
+                                name="username"
+                                placeholder="Enter your username"
+                                minlength="3"
+                                maxlength="50">
+                            <small class="text-muted">3-50 characters</small>
+                        </div>
 
-                <div class="alert alert-info mt-3 mb-0">
-                    <small>
-                        <i class="fas fa-info-circle"></i>
-                        New accounts are created with <strong>User</strong> role by default.
-                        Contact an admin for role upgrades.
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope"></i> Email Address <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input
+                                    type="email"
+                                    class="form-control"
+                                    id="email"
+                                    name="email"
+                                    placeholder="supremo@gmail.com">
+                                <button class="btn btn-outline-primary" type="button" id="sendOtpBtn" onclick="sendOTP()">
+                                    Send OTP
+                                </button>
+                            </div>
+                            <div id="otpStatus" class="mt-2"></div>
+                        </div>
+
+                        <div class="mb-3 d-none" id="otpSection">
+                            <label for="otp" class="form-label">
+                                <i class="fas fa-shield-alt"></i> Enter OTP Code
+                            </label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="otp"
+                                name="otp"
+                                placeholder="Enter 6-digit code"
+                                maxlength="6"
+                                pattern="[0-9]{6}">
+                            <div class="mt-2">
+                                <small class="text-muted">Check Flask console for OTP. Expires in: <span id="otpTimer" class="text-danger fw-bold">10:00</span></small>
+                                <a href="javascript:void(0)" id="resendOtp" class="ms-3 text-decoration-none" onclick="sendOTP()">
+                                    <small><i class="fas fa-redo"></i> Resend</small>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock"></i> Password <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="password"
+                                name="password"
+                                placeholder="••••••••"
+                                minlength="6">
+                            <small class="text-muted">At least 6 characters</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">
+                                <i class="fas fa-lock"></i> Confirm Password <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="confirm_password"
+                                name="confirm_password"
+                                placeholder="••••••••"
+                                minlength="6">
+                            <div id="passwordError" class="text-danger small mt-1"></div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="createAccountBtn">
+                                <i class="fas fa-user-plus"></i> CREATE ACCOUNT
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center bg-light">
+                    <small class="text-muted">
+                        Already have an account?
+                        <a href="{{ url_for('login') }}" class="text-decoration-none">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
                     </small>
                 </div>
             </div>
         </div>
-
-        <div class="text-center mt-3 text-white">
-            <small>&copy; 2025 Ma Locozz Clothing Store. All rights reserved.</small>
-        </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<script>
+let otpSent = false;
+let timerInterval = null;
+
+function sendOTP() {
+    const emailInput = document.getElementById('email');
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    const otpSection = document.getElementById('otpSection');
+    const otpStatus = document.getElementById('otpStatus');
+
+    const email = emailInput.value.trim();
+
+    if (!email) {
+        alert('Please enter your email address');
+        emailInput.focus();
+        return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address');
+        emailInput.focus();
+        return;
+    }
+
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+
+    const formData = new FormData();
+    formData.append('email', email);
+
+    fetch('/send-otp', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            otpSent = true;
+
+            sendOtpBtn.innerHTML = '<i class="fas fa-check"></i> OTP Sent';
+            sendOtpBtn.classList.remove('btn-outline-primary');
+            sendOtpBtn.classList.add('btn-success');
+
+            otpSection.classList.remove('d-none');
+
+            otpStatus.innerHTML = '<div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle"></i> <strong>OTP sent!</strong> Check your Flask console. Code: <strong>' + data.otp + '</strong><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+
+            startTimer(600);
+
+            document.getElementById('otp').focus();
+
+        } else {
+            alert(data.message || 'Failed to send OTP. Please try again.');
+            resetOtpButton();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error sending OTP. Please check your connection and try again.');
+        resetOtpButton();
+    });
+}
+
+function resetOtpButton() {
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    sendOtpBtn.disabled = false;
+    sendOtpBtn.innerHTML = 'Send OTP';
+    sendOtpBtn.classList.remove('btn-success');
+    sendOtpBtn.classList.add('btn-outline-primary');
+}
+
+function startTimer(seconds) {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+
+    let remaining = seconds;
+    updateTimerDisplay(remaining);
+
+    timerInterval = setInterval(function() {
+        remaining--;
+        updateTimerDisplay(remaining);
+
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            document.getElementById('otpStatus').innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> OTP expired. Please request a new one.</div>';
+            resetOtpButton();
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds - (minutes * 60);
+    const display = minutes + ':' + (secs < 10 ? '0' + secs : secs);
+
+    const otpTimer = document.getElementById('otpTimer');
+    if (otpTimer) {
+        otpTimer.textContent = display;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registerForm');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    const passwordError = document.getElementById('passwordError');
+
+    confirmPasswordInput.addEventListener('input', function() {
+        if (passwordInput.value !== confirmPasswordInput.value) {
+            passwordError.textContent = 'Passwords do not match';
+            confirmPasswordInput.classList.add('is-invalid');
+        } else {
+            passwordError.textContent = '';
+            confirmPasswordInput.classList.remove('is-invalid');
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        if (passwordInput.value !== confirmPasswordInput.value) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+            confirmPasswordInput.focus();
+            return false;
+        }
+
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const otp = document.getElementById('otp').value.trim();
+        const password = passwordInput.value;
+
+        if (!name || name.length < 3) {
+            e.preventDefault();
+            alert('Please enter your name (at least 3 characters)');
+            document.getElementById('name').focus();
+            return false;
+        }
+
+        if (!email) {
+            e.preventDefault();
+            alert('Please enter your email');
+            document.getElementById('email').focus();
+            return false;
+        }
+
+        if (!otp || otp.length !== 6) {
+            e.preventDefault();
+            alert('Please enter the 6-digit OTP code');
+            document.getElementById('otp').focus();
+            return false;
+        }
+
+        if (!password || password.length < 6) {
+            e.preventDefault();
+            alert('Password must be at least 6 characters');
+            passwordInput.focus();
+            return false;
+        }
+
+        const createAccountBtn = document.getElementById('createAccountBtn');
+        createAccountBtn.disabled = true;
+        createAccountBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating Account...';
+
+        return true;
+    });
+});
+</script>
+{% endblock %}

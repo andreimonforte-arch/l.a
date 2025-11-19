@@ -109,8 +109,7 @@ INSERT IGNORE INTO categories (name, description) VALUES
 ('Outerwear', 'Jackets, hoodies, and coats'),
 ('Accessories', 'Caps, belts, and lifestyle items'),
 ('Essentials', 'Everyday basics'),
-('Bundles', 'Discounted outfit sets'),
-('Gallery', 'Limited edition collections');
+
 
 INSERT IGNORE INTO suppliers (name, contact_person, phone, email, address) VALUES
 ('Metro Apparel Supply', 'John Santos', '09171234567', 'metroapparel@gmail.com', 'Makati City, PH'),
@@ -138,6 +137,4 @@ INSERT IGNORE INTO order_details (order_id, product_id, quantity, price) VALUES
 (1, 3, 1, 1299.99),
 (2, 6, 1, 1899.99);
 
-INSERT IGNORE INTO users (username, password_hash, role) VALUES
-('admin', 'hashed_password_example', 'Admin'),
-('staff', 'hashed_password_example', 'Staff');
+

@@ -1,194 +1,423 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Shop - Browse Products{% endblock %}
+{% block title %}Shop - Ma Locozz{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-shopping-bag"></i> Browse Products</h2>
-        <a href="{{ url_for('view_cart') }}" class="btn btn-primary">
-            <i class="fas fa-shopping-cart"></i> Cart 
-            <span class="badge bg-light text-dark">{{ cart_count }}</span>
-        </a>
-    </div>
 
-    <div class="card mb-4">
+<div class="shop-hero-banner mb-4">
+    <div class="hero-background">
+        <div class="hero-content">
+            <h1 class="hero-title">Shop</h1>
+            <p class="hero-subtitle">Discover Our Latest Collection</p>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+   
+    <div class="card mb-4 search-filter-card">
         <div class="card-body">
-            <form method="GET" action="{{ url_for('shop') }}" class="row g-3">
+            <form method="GET" class="row g-3">
                 <div class="col-md-5">
-                    <input type="text" class="form-control" name="search" 
-                           placeholder="Search by code, name, color, or size..." 
-                           value="{{ search }}">
+                    <input type="text" class="form-control streetwear-input" name="search"
+                           placeholder="SEARCH THE COLLECTION..."
+                           value="{{ request.args.get('search', '') }}">
                 </div>
                 <div class="col-md-4">
-                    <select class="form-select" name="category">
-                        <option value="">All Categories</option>
+                    <select class="form-select streetwear-select" name="category">
+                        <option value="">ALL CATEGORIES</option>
                         {% for cat in categories %}
-                        <option value="{{ cat.id }}" {% if category_filter == cat.id|string %}selected{% endif %}>
-                            {{ cat.name }}
+                        <option value="{{ cat.id }}" {% if request.args.get('category')|int == cat.id %}selected{% endif %}>
+                            {{ cat.name|upper }}
                         </option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-search"></i> Search
+                    <button type="submit" class="btn btn-primary w-100 street-search-btn">
+                        <i class="fas fa-search"></i> SEARCH
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    {% if products %}
+   
     <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
         {% for product in products %}
+        {% set total_qty = product.total_quantity|default(0, true) %}
         <div class="col">
-            <div class="card h-100 shadow-sm hover-shadow">
-                <div class="card-body">
-                    <div class="text-center mb-3">
-                        <i class="fas fa-tshirt fa-4x text-primary"></i>
-                    </div>
-                    <span class="badge bg-info mb-2">{{ product.category.name }}</span>
-                    <h5 class="card-title">{{ product.name }}</h5>
-                    <p class="text-muted small">{{ product.product_code }}</p>
-                    <p class="card-text text-truncate">{{ product.description or 'No description' }}</p>
+            <div class="card h-100 shadow-sm product-card street-product-card">
+                <div class="position-relative product-image-container">
                     
-                    <div class="row mb-2">
-                        <div class="col-6">
-                            <small class="text-muted">Size:</small>
-                            <span class="badge bg-secondary">{{ product.size }}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted">Color:</small>
-                            <span class="badge bg-secondary">{{ product.color }}</span>
-                        </div>
-                    </div>
+                    <img src="{{ get_product_image_url(product) }}"
+                         alt="{{ product.name }}"
+                         class="card-img-top product-image"
+                         onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder.png') }}';">
                     
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0 text-success">₱{{ "%.2f"|format(product.price) }}</h4>
-                        {% if product.quantity > 0 %}
-                        <span class="badge bg-success">In Stock: {{ product.quantity }}</span>
+                    <div class="position-absolute top-0 start-0 m-2">
+                        {% if total_qty == 0 %}
+                        <span class="badge street-badge-danger stock-badge">
+                            <i class="fas fa-times-circle"></i> SOLD OUT
+                        </span>
+                        {% elif total_qty < 10 %}
+                        <span class="badge street-badge-warning stock-badge">
+                            <i class="fas fa-fire"></i> ALMOST GONE ({{ total_qty }})
+                        </span>
                         {% else %}
-                        <span class="badge bg-danger">Out of Stock</span>
+                        <span class="badge street-badge-success stock-badge">
+                            <i class="fas fa-check-circle"></i> IN STOCK ({{ total_qty }})
+                        </span>
                         {% endif %}
+                    </div>
+
+                    
+                    {% if total_qty < 20 and total_qty > 0 %}
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge hot-badge">
+                            🔥 HOT
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body product-info">
+                    <h5 class="card-title product-name street-product-name">{{ product.name|upper }}</h5>
+                    <p class="card-text product-description text-muted street-description">
+                        {{ product.description|truncate(80) }}
+                    </p>
+
+                    <div class="product-badges mb-3">
+                        <span class="badge street-category-badge">
+                            <i class="fas fa-tag"></i> {{ product.category.name|upper }}
+                        </span>
+                        <span class="badge street-color-badge">
+                            <i class="fas fa-palette"></i> {{ product.color|upper }}
+                        </span>
+                    </div>
+
+                    <div class="price-section mb-3">
+                        <h4 class="price-value street-price mb-0">
+                            ₱{{ "%.2f"|format(product.price) }}
+                        </h4>
                     </div>
                 </div>
-                <div class="card-footer bg-transparent">
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('shop_product_detail', id=product.id) }}" 
-                           class="btn btn-outline-primary btn-sm flex-grow-1">
-                            <i class="fas fa-eye"></i> View
+
+                <div class="card-footer bg-transparent product-actions">
+                    <div class="d-grid">
+                        <a href="{{ url_for('shop_product_detail', id=product.id) }}"
+                           class="btn btn-info btn-sm view-details-btn street-view-btn">
+                            <i class="fas fa-eye"></i> VIEW DETAILS
                         </a>
-                        {% if product.quantity > 0 %}
-                        <button class="btn btn-success btn-sm flex-grow-1 add-to-cart" 
-                                data-product-id="{{ product.id }}">
-                            <i class="fas fa-cart-plus"></i> Add to Cart
-                        </button>
-                        {% else %}
-                        <button class="btn btn-secondary btn-sm flex-grow-1" disabled>
-                            <i class="fas fa-times"></i> Unavailable
-                        </button>
-                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert street-alert text-center">
+                <i class="fas fa-info-circle"></i> NO PRODUCTS FOUND. TRY DIFFERENT FILTERS.
+            </div>
+        </div>
         {% endfor %}
     </div>
-
-    <!-- Pagination -->
-    {% if pagination.pages > 1 %}
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('shop', page=pagination.prev_num, search=search, category=category_filter) }}">
-                    Previous
-                </a>
-            </li>
-            
-            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                {% if page_num %}
-                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('shop', page=page_num, search=search, category=category_filter) }}">
-                            {{ page_num }}
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                {% endif %}
-            {% endfor %}
-            
-            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('shop', page=pagination.next_num, search=search, category=category_filter) }}">
-                    Next
-                </a>
-            </li>
-        </ul>
+    
+    {% if pagination and pagination.pages > 1 %}
+    <nav class="mt-4 pagination-container" aria-label="Products pagination">
+        {{ pagination.links }}
     </nav>
-    {% endif %}
-
-    {% else %}
-    <div class="alert alert-info text-center">
-        <i class="fas fa-info-circle fa-3x mb-3"></i>
-        <h4>No products found</h4>
-        <p>Try adjusting your search or filter criteria.</p>
-    </div>
     {% endif %}
 </div>
 
 <style>
-.hover-shadow {
-    transition: all 0.3s ease;
+/* Simple Hero Banner */
+.shop-hero-banner {
+    position: relative;
+    height: 200px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0 0 30px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.hover-shadow:hover {
+
+.hero-background {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.hero-content {
+    text-align: center;
+    color: white;
+    padding: 0 20px;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hero-subtitle {
+    font-size: 1.1rem;
+    font-weight: 400;
+    opacity: 0.95;
+    margin: 0;
+}
+
+/* Search & Filter Card */
+.search-filter-card {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.search-filter-card .card-body {
+    padding: 20px;
+}
+
+.streetwear-input,
+.streetwear-select {
+    background: #ffffff;
+    border: 1px solid #ced4da;
+    color: #495057;
+    font-family: inherit;
+    font-weight: 400;
+    border-radius: 4px;
+}
+
+.streetwear-input::placeholder {
+    color: #6c757d;
+    opacity: 0.7;
+}
+
+.streetwear-input:focus,
+.streetwear-select:focus {
+    background: #ffffff;
+    border-color: #80bdff;
+    color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.street-search-btn {
+    background: #007bff;
+    border: 1px solid #007bff;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.street-search-btn:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+/* Product Cards */
+.street-product-card {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.street-product-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.product-image-container {
+    overflow: hidden;
+    background: #000;
+}
+
+.product-image {
+    transition: transform 0.5s ease;
+}
+
+.street-product-card:hover .product-image {
+    transform: scale(1.05);
+}
+
+/* Stock Badges */
+.street-badge-danger {
+    background: #dc3545;
+    color: #ffffff;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.street-badge-warning {
+    background: #ffc107;
+    color: #000000;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.street-badge-success {
+    background: #28a745;
+    color: #ffffff;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.hot-badge {
+    background: #dc3545;
+    color: #ffffff;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+/* Product Info */
+.product-info {
+    background: #ffffff;
+    padding: 15px;
+}
+
+.street-product-name {
+    font-family: inherit;
+    font-size: 1.25rem;
+    color: #212529;
+    letter-spacing: 0;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.street-description {
+    color: #6c757d;
+    font-family: inherit;
+    font-size: 0.875rem;
+    text-transform: none;
+}
+
+.street-category-badge {
+    background: #17a2b8;
+    color: #ffffff;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    letter-spacing: 0;
+    border-radius: 4px;
+}
+
+.street-color-badge {
+    background: #6c757d;
+    color: #ffffff;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    letter-spacing: 0;
+    border-radius: 4px;
+}
+
+.street-price {
+    font-family: inherit;
+    font-size: 1.5rem;
+    color: #28a745;
+    text-shadow: none;
+    letter-spacing: 0;
+    font-weight: 700;
+}
+
+.street-size-label {
+    font-family: inherit;
+    color: #495057;
+    font-size: 0.875rem;
+    letter-spacing: 0;
+    font-weight: 600;
+}
+
+.street-size-select {
+    background: #ffffff;
+    border: 1px solid #ced4da;
+    color: #495057;
+    font-family: inherit;
+    font-weight: 400;
+    border-radius: 4px;
+    text-transform: none;
+}
+
+.street-size-select:focus {
+    background: #ffffff;
+    border-color: #80bdff;
+    color: #495057;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Buttons */
+.street-view-btn {
+    background: #17a2b8;
+    border: 1px solid #17a2b8;
+    color: #ffffff;
+    font-family: inherit;
+    font-weight: 500;
+    letter-spacing: 0;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.street-view-btn:hover {
+    background: #138496;
+    border-color: #138496;
+    color: #ffffff;
+}
+
+.street-alert {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    font-family: inherit;
+    font-weight: 400;
+    letter-spacing: 0;
+    border-radius: 4px;
+    padding: 15px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .shop-hero-banner {
+        height: 180px;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 0.9rem;
+    }
 }
 </style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const addToCartButtons = document.querySelectorAll('.add-to-cart');
-    
-    addToCartButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const productId = this.dataset.productId;
-            const formData = new FormData();
-            formData.append('quantity', 1);
-            
-            fetch(`/cart/add/${productId}`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update cart count
-                    const cartBadge = document.querySelector('.badge.bg-light');
-                    if (cartBadge) {
-                        cartBadge.textContent = data.cart_count;
-                    }
-                    
-                    // Show success animation
-                    this.innerHTML = '<i class="fas fa-check"></i> Added!';
-                    this.classList.remove('btn-success');
-                    this.classList.add('btn-primary');
-                    
-                    setTimeout(() => {
-                        this.innerHTML = '<i class="fas fa-cart-plus"></i> Add to Cart';
-                        this.classList.remove('btn-primary');
-                        this.classList.add('btn-success');
-                    }, 2000);
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to add item to cart');
-            });
-        });
-    });
-});
-</script>
 {% endblock %}

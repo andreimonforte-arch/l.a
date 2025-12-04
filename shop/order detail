@@ -18,65 +18,74 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card mb-4">
+            <div class="card mb-4 shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="fas fa-box"></i> Order Items</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Details</th>
-                                    <th class="text-center">Quantity</th>
-                                    <th class="text-end">Price</th>
-                                    <th class="text-end">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for detail in order.order_details %}
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-tshirt fa-2x text-primary me-3"></i>
-                                            <div>
-                                                <strong>{{ detail.product.name }}</strong>
-                                                <br>
-                                                <small class="text-muted">{{ detail.product.product_code }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary me-1">{{ detail.product.size }}</span>
-                                        <span class="badge bg-info">{{ detail.product.color }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-light text-dark">{{ detail.quantity }}</span>
-                                    </td>
-                                    <td class="text-end">₱{{ "%.2f"|format(detail.price) }}</td>
-                                    <td class="text-end">
-                                        <strong>₱{{ "%.2f"|format(detail.price * detail.quantity) }}</strong>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot>
-                                <tr class="table-light">
-                                    <td colspan="4" class="text-end"><strong>Total Amount:</strong></td>
-                                    <td class="text-end">
-                                        <h5 class="text-primary mb-0">₱{{ "%.2f"|format(order.total_amount) }}</h5>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                    {% for detail in order.order_details %}
+                    <div class="row align-items-center border-bottom py-3">
+                        
+                        <div class="col-md-2 text-center">
+                            {% if detail.product.image_filename %}
+                            <img src="{{ url_for('product_image', id=detail.product.id) }}"
+                                 class="img-fluid rounded"
+                                 style="max-height: 80px; object-fit: cover;"
+                                 alt="{{ detail.product.name }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/placeholder.png') }}'">
+                            {% else %}
+                            <div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px; margin: 0 auto;">
+                                <i class="fas fa-tshirt fa-2x text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        
+                        <div class="col-md-4">
+                            <strong>{{ detail.product.name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ detail.product.product_code }}</small>
+                            <br>
+                            <span class="badge bg-secondary me-1">Size: {{ detail.product.size }}</span>
+                            <span class="badge bg-info">{{ detail.product.color }}</span>
+                        </div>
+
+                        
+                        <div class="col-md-2 text-center">
+                            <span class="badge bg-light text-dark" style="font-size: 1rem; padding: 8px 12px;">
+                                Qty: {{ detail.quantity }}
+                            </span>
+                        </div>
+
+                        
+                        <div class="col-md-2 text-end">
+                            <div class="text-muted small">Unit Price</div>
+                            <strong>₱{{ "{:,.2f}".format(detail.price) }}</strong>
+                        </div>
+
+                       
+                        <div class="col-md-2 text-end">
+                            <div class="text-muted small">Subtotal</div>
+                            <strong class="text-primary">₱{{ "{:,.2f}".format(detail.price * detail.quantity) }}</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    
+                    <div class="row pt-3">
+                        <div class="col-md-10 text-end">
+                            <h5 class="mb-0">Total Amount:</h5>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <h4 class="text-success mb-0">₱{{ "{:,.2f}".format(order.total_amount) }}</h4>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card mb-3">
+            <div class="card mb-3 shadow-sm">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="fas fa-info-circle"></i> Order Status</h6>
                 </div>
@@ -109,7 +118,7 @@
                 </div>
             </div>
 
-            <div class="card mb-3">
+            <div class="card mb-3 shadow-sm">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="fas fa-user"></i> Customer Information</h6>
                 </div>
@@ -134,7 +143,7 @@
             </div>
 
             {% if order.status in ['Pending', 'Processing'] %}
-            <div class="card border-danger">
+            <div class="card border-danger shadow-sm">
                 <div class="card-header bg-danger text-white">
                     <h6 class="mb-0"><i class="fas fa-ban"></i> Cancel Order</h6>
                 </div>

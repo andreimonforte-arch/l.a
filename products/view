@@ -1,139 +1,165 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ product.name }} - Ma Locozz Clothing Brand {% endblock %}
+{% block title %}{{ product.name }} - Ma Locozz Clothing Brand{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h2><i class="fas fa-tshirt"></i> Product Details</h2>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('list_products') }}">Products</a></li>
-                <li class="breadcrumb-item active">{{ product.name }}</li>
-            </ol>
-        </nav>
-    </div>
-</div>
+{% set total_qty = product.size_quantities.values()|sum if product.size_quantities else 0 %}
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h4 class="mb-0">{{ product.name }}</h4>
-            </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Product Code:</strong>
-                        <p class="text-muted">{{ product.product_code }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Category:</strong>
-                        <p><span class="badge bg-info">{{ product.category.name }}</span></p>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <strong>Description:</strong>
-                        <p class="text-muted">{{ product.description if product.description else 'No description available' }}</p>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>Size:</strong>
-                        <p class="text-muted">{{ product.size }}</p>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Color:</strong>
-                        <p>
-                            <span class="badge" style="background-color: {{ product.color.lower() }}; color: white;">
-                                {{ product.color }}
-                            </span>
-                        </p>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Price:</strong>
-                        <p class="text-success fw-bold">₱{{ "%.2f"|format(product.price) }}</p>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Quantity in Stock:</strong>
-                        <p class="{% if product.quantity < 10 %}low-stock{% endif %}">
-                            {{ product.quantity }} units
-                            {% if product.quantity < 10 %}
-                                <span class="badge bg-warning">Low Stock</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Total Value:</strong>
-                        <p class="text-primary fw-bold">₱{{ "%.2f"|format(product.price * product.quantity) }}</p>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Created:</strong>
-                        <p class="text-muted">{{ product.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Last Updated:</strong>
-                        <p class="text-muted">{{ product.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+<div class="container py-4">
+    
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('shop') }}">Shop</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('shop') }}?category={{ product.category.id }}">{{ product.category.name }}</a></li>
+            <li class="breadcrumb-item active">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+       
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="position-relative">
+                        {% if product.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}"
+                                 alt="{{ product.name }}"
+                                 class="img-fluid w-100"
+                                 id="mainProductImage"
+                                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder.jpg') }}';"
+                                 style="max-height: 600px; object-fit: contain; background-color: #f8f9fa;">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-light" style="height: 600px;">
+                                <div class="text-center">
+                                    <i class="fas fa-image fa-5x text-muted mb-3"></i>
+                                    <p class="text-muted">No image available</p>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        
+                        <div class="position-absolute top-0 end-0 p-3">
+                            <button class="btn btn-light btn-sm me-2" onclick="window.print()" title="Print">
+                                <i class="fas fa-print"></i>
+                            </button>
+                            <button class="btn btn-light btn-sm" onclick="shareProduct()" title="Share">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Actions</h5>
+
+       
+        <div class="col-lg-6">
+            
+            <h1 class="h2 fw-bold mb-3">{{ product.name }}</h1>
+
+           
+            <h2 class="text-success fw-bold mb-3" style="font-size: 2.5rem;">₱{{ "{:,.2f}".format(product.price) }}</h2>
+
+           
+            <div class="mb-4">
+                <span class="badge bg-dark px-3 py-2" style="font-size: 0.9rem;">{{ product.product_code }}</span>
             </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    {% if session.role == 'admin' %}
-                    <a href="{{ url_for('edit_product', id=product.id) }}" class="btn btn-warning">
-                        <i class="fas fa-edit"></i> Edit Product
-                    </a>
-                    <form method="POST" action="{{ url_for('delete_product', id=product.id) }}" onsubmit="return confirm('Are you sure you want to delete this product?');">
-                        <button type="submit" class="btn btn-danger w-100">
-                            <i class="fas fa-trash"></i> Delete Product
-                        </button>
-                    </form>
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Admin access required to edit or delete
+
+          
+            {% if product.description %}
+            <div class="mb-4">
+                <h5 class="fw-bold">Description</h5>
+                <p class="text-muted">{{ product.description }}</p>
+            </div>
+            {% endif %}
+
+           
+            {% if product.size_quantities %}
+            <div class="mb-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-ruler-horizontal me-2"></i>Available Sizes
+                </h5>
+                <div class="row g-3">
+                    {% for size, qty in product.size_quantities.items() %}
+                    {% if qty > 0 %}
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded text-center p-3 h-100" style="background-color: #f8f9fa;">
+                            <div class="fw-bold fs-4 mb-1">{{ size }}</div>
+                            <small class="text-muted">{{ qty }} left</small>
+                        </div>
                     </div>
                     {% endif %}
-                    <a href="{{ url_for('list_products') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to List
-                    </a>
+                    {% endfor %}
                 </div>
             </div>
-        </div>
-        
-        <div class="card mt-3">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Stock Status</h5>
+            {% endif %}
+
+          
+            <div class="alert alert-info mb-4" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Total Stock:</strong> {{ total_qty }} units
             </div>
-            <div class="card-body text-center">
-                {% if product.quantity == 0 %}
-                    <i class="fas fa-times-circle text-danger" style="font-size: 3rem;"></i>
-                    <p class="mt-2 text-danger fw-bold">Out of Stock</p>
-                {% elif product.quantity < 10 %}
-                    <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
-                    <p class="mt-2 text-warning fw-bold">Low Stock Alert</p>
-                {% else %}
-                    <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
-                    <p class="mt-2 text-success fw-bold">In Stock</p>
-                {% endif %}
+
+           
+            <div class="d-grid">
+                <a href="{{ url_for('edit_product', id=product.id) }}"
+                   class="btn btn-warning btn-lg py-3 fw-bold"
+                   style="background-color: #ffc107; border: none;">
+                    <i class="fas fa-edit me-2"></i>Edit Product
+                </a>
             </div>
+
+            
+            {% if is_admin_view %}
+            <div class="d-grid mt-3">
+                <button class="btn btn-danger btn-lg py-3 fw-bold" onclick="deleteProduct()">
+                    <i class="fas fa-trash me-2"></i>Delete Product
+                </button>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Share Product
+function shareProduct() {
+    const shareUrl = '{{ url_for('view_product', id=product.id, _external=True) }}';
+    const shareTitle = '{{ product.name }}';
+
+    if (navigator.share) {
+        navigator.share({
+            title: shareTitle,
+            url: shareUrl
+        }).catch(err => console.log('Share cancelled'));
+    } else {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('📋 Link copied to clipboard!');
+        });
+    }
+}
+
+// Delete Product (Admin)
+function deleteProduct() {
+    if (confirm('⚠️ Are you sure you want to delete this product? This action cannot be undone.')) {
+        fetch("{{ url_for('delete_product', id=product.id) }}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Product deleted successfully!');
+                window.location.href = "{{ url_for('list_products') }}";
+            } else {
+                alert('❌ Failed to delete product: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('❌ Error: ' + error.message);
+        });
+    }
+}
+</script>
 {% endblock %}

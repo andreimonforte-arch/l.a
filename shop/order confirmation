@@ -1,23 +1,66 @@
 {% extends 'base.html' %}
 
-{% block title %}Order Confirmation - Ma Locozz Clothing Brand{% endblock %}
+{% block title %}Order Confirmation - Ma Locozz{% endblock %}
 
 {% block content %}
 <div class="container py-5">
+    <!-- Success Message -->
     <div class="text-center mb-5">
-        <div class="success-icon mb-3">
-            <i class="fas fa-check-circle"></i>
+        <div class="success-icon mb-4">
+            <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
         </div>
-        <h1 class="display-5 fw-bold mb-2">Order Confirmed!</h1>
-        <p class="text-muted fs-5">Thank you for your purchase</p>
-        <p class="text-muted">Order #{{ order.id }}</p>
+        <h1 class="display-4 fw-bold mb-3">Order Confirmed!</h1>
+        <p class="lead text-muted">Thank you for your purchase</p>
+        <p class="text-muted">Order #{{ order.id }} has been successfully placed</p>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8 mb-4">
+    <!-- Order Details Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Order Summary</h5>
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-receipt me-2"></i>Order Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Order Number:</strong><br>
+                            <span class="text-muted">#{{ order.id }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Order Date:</strong><br>
+                            <span class="text-muted">{{ order.order_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Status:</strong><br>
+                            <span class="badge bg-warning text-dark">{{ order.status }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Payment Method:</strong><br>
+                            <span class="text-muted">{{ order.payment_method }}</span>
+                        </div>
+                    </div>
+
+                    {% if order.shipping_address %}
+                    <div class="mb-3">
+                        <strong>Shipping Address:</strong><br>
+                        <span class="text-muted">{{ order.shipping_address }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-box me-2"></i>Order Items
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -25,30 +68,40 @@
                             <thead>
                                 <tr>
                                     <th>Product</th>
-                                    <th>Quantity</th>
+                                    <th class="text-center">Quantity</th>
                                     <th class="text-end">Price</th>
+                                    <th class="text-end">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for detail in order.order_details %}
                                 <tr>
                                     <td>
-                                        <strong>{{ detail.product.name }}</strong><br>
-                                        <small class="text-muted">
-                                            {{ detail.product.product_code }} |
-                                            Size: {{ detail.product.size }} |
-                                            Color: {{ detail.product.color }}
-                                        </small>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ product_image_url(detail.product) }}"
+                                                 alt="{{ detail.product.name }}"
+                                                 class="me-3 rounded"
+                                                 style="width: 60px; height: 60px; object-fit: cover;">
+                                            <div>
+                                                <strong>{{ detail.product.name }}</strong><br>
+                                                <small class="text-muted">{{ detail.product.product_code }}</small>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td>{{ detail.quantity }}</td>
-                                    <td class="text-end">₱{{ "%.2f"|format(detail.price * detail.quantity) }}</td>
+                                    <td class="text-center align-middle">{{ detail.quantity }}</td>
+                                    <td class="text-end align-middle">₱{{ "{:,.2f}".format(detail.price) }}</td>
+                                    <td class="text-end align-middle">
+                                        <strong>₱{{ "{:,.2f}".format(detail.quantity * detail.price) }}</strong>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
-                            <tfoot class="border-top">
-                                <tr class="fw-bold fs-5">
-                                    <td colspan="2" class="text-end">Total:</td>
-                                    <td class="text-end text-success">₱{{ "%.2f"|format(order.total_amount) }}</td>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td class="text-end">
+                                        <h5 class="text-success mb-0">₱{{ "{:,.2f}".format(order.total_amount) }}</h5>
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -56,51 +109,14 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
-                </div>
-                <div class="card-body">
-                    <p class="mb-1"><strong>{{ order.customer.first_name }} {{ order.customer.last_name }}</strong></p>
-                    {% if order.customer.email %}
-                    <p class="mb-1"><i class="fas fa-envelope"></i> {{ order.customer.email }}</p>
-                    {% endif %}
-                    {% if order.customer.phone %}
-                    <p class="mb-1"><i class="fas fa-phone"></i> {{ order.customer.phone }}</p>
-                    {% endif %}
-                    {% if order.customer.address %}
-                    <p class="mb-0"><i class="fas fa-map-marker-alt"></i> {{ order.customer.address }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body text-center">
-                    <div class="status-icon mb-3">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <h5>Order Status</h5>
-                    <span class="badge bg-info fs-6 px-3 py-2">{{ order.status }}</span>
-                    <p class="text-muted mt-3 mb-0 small">
-                        Placed on {{ order.order_date.strftime('%B %d, %Y') }}
-                    </p>
-                </div>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-primary w-100 mb-2">
-                        <i class="fas fa-map-marker-alt"></i> Track Order
-                    </a>
-                    <a href="{{ url_for('my_orders') }}" class="btn btn-outline-secondary w-100 mb-2">
-                        <i class="fas fa-list"></i> View All Orders
-                    </a>
-                    <a href="{{ url_for('shop') }}" class="btn btn-outline-primary w-100">
-                        <i class="fas fa-shopping-bag"></i> Continue Shopping
-                    </a>
-                </div>
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center mb-5">
+                <a href="{{ url_for('my_orders') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-list me-2"></i>View My Orders
+                </a>
+                <a href="{{ url_for('shop') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                </a>
             </div>
         </div>
     </div>
@@ -108,9 +124,7 @@
 
 <style>
 .success-icon {
-    font-size: 5rem;
-    color: #28a745;
-    animation: scaleIn 0.5s ease-out;
+    animation: scaleIn 0.5s ease-in-out;
 }
 
 @keyframes scaleIn {
@@ -124,29 +138,12 @@
     }
 }
 
-.status-icon {
-    font-size: 2.5rem;
-    color: #667eea;
-}
-
 .card {
-    border: none;
     transition: transform 0.2s;
 }
 
 .card:hover {
-    transform: translateY(-2px);
-}
-
-.table th {
-    border-top: none;
-    color: #6c757d;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.table td {
-    vertical-align: middle;
+    transform: translateY(-5px);
 }
 </style>
 {% endblock %}

@@ -1,81 +1,329 @@
-// {% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}Add New Category - Ma Locozz Clothing Brand {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h2><i class="fas fa-plus"></i> Add New Category</h2>
-        <p class="text-muted">Create a new product category (Admin only)</p>
-    </div>
-    <div class="col-md-6 text-end">
-        {% if session.role == 'admin' %}
-        <a href="{{ url_for('list_categories') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Categories
-        </a>
-        {% endif %}
-    </div>
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 50%, #3a3a3a 100%);
+    padding: 30px 35px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #8a8a8a, transparent);
+}
+.page-header h2 {
+    color: #e0e0e0;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.page-header p {
+    color: #b0b0b0;
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+}
+.form-card {
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+.form-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px 25px;
+    border-bottom: 2px solid #e0e0e0;
+}
+.form-header h5 {
+    color: #3a3a3a;
+    margin: 0;
+    font-weight: 600;
+}
+.form-body {
+    padding: 30px 25px;
+}
+.form-label {
+    color: #555;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.form-label i {
+    color: #7a7a7a;
+}
+.form-label .required {
+    color: #e74c3c;
+}
+.form-control, .form-select {
+    border: 2px solid #d0d0d0;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #7a7a7a;
+    box-shadow: 0 0 0 3px rgba(120, 120, 120, 0.1);
+    outline: none;
+}
+.form-text {
+    color: #999;
+    font-size: 0.85rem;
+}
+.btn-titanium {
+    background: linear-gradient(135deg, #5a5a5a 0%, #7a7a7a 50%, #5a5a5a 100%);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 12px 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.btn-titanium:hover {
+    background: linear-gradient(135deg, #6a6a6a 0%, #8a8a8a 50%, #6a6a6a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    color: #fff;
+}
+.btn-outline-titanium {
+    border: 2px solid #7a7a7a;
+    color: #5a5a5a;
+    background: transparent;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 10px 28px;
+    transition: all 0.3s ease;
+}
+.btn-outline-titanium:hover {
+    background: #f5f5f5;
+    border-color: #6a6a6a;
+    color: #3a3a3a;
+}
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 20px;
+}
+.breadcrumb-item a {
+    color: #7a7a7a;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.breadcrumb-item a:hover {
+    color: #5a5a5a;
+}
+.breadcrumb-item.active {
+    color: #333;
+}
+.char-counter {
+    float: right;
+    color: #999;
+    font-size: 0.85rem;
+}
+.access-denied {
+    background: linear-gradient(135deg, #fef5e7, #fadbd8);
+    border: 2px solid #e74c3c;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    margin-top: 30px;
+}
+.access-denied i {
+    font-size: 4rem;
+    color: #e74c3c;
+    margin-bottom: 20px;
+}
+.access-denied h4 {
+    color: #c0392b;
+    margin-bottom: 15px;
+}
+.access-denied p {
+    color: #7f8c8d;
+    margin-bottom: 25px;
+}
+</style>
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('list_categories') }}">Categories</a></li>
+        <li class="breadcrumb-item active">Add New</li>
+    </ol>
+</nav>
+
+
+<div class="page-header">
+    <h2></i> Add New Category</h2>
+    <p>Create a new category (Admin only)</p>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-tags"></i> Category Details</h5>
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            <div class="card-body">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
-                {% if session.role == 'admin' %}
-                <form method="POST" action="{{ url_for('create_category') }}">
-                    <div class="mb-3">
+{% if session.role == 'Admin' %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="form-card">
+            <div class="form-header">
+                <h5></i> Category Details</h5>
+            </div>
+            <div class="form-body">
+                <form method="POST" action="{{ url_for('create_category') }}" id="categoryForm">
+                    
+                    <div class="mb-4">
                         <label for="name" class="form-label">
-                            <i class="fas fa-tag"></i> Category Name *
+                            <i class="fas fa-tag"></i> Category Name <span class="required">*</span>
                         </label>
                         <input type="text" class="form-control" id="name" name="name"
-                               value="{{ form_data.name if form_data else '' }}" required
-                               placeholder="e.g., Shirts, Pants" maxlength="50">
-                        <small class="form-text text-muted">2-50 characters, unique name required.</small>
+                               placeholder="e.g., T-Shirts, Hoodies, Accessories"
+                               required maxlength="50" minlength="2">
+                        <div class="form-text">
+                            <span>Enter a unique category name (2-50 characters)</span>
+                            <span class="char-counter"><span id="nameCount">0</span>/50</span>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
+                    
+                    <div class="mb-4">
                         <label for="description" class="form-label">
                             <i class="fas fa-align-left"></i> Description
                         </label>
-                        <textarea class="form-control" id="description" name="description" rows="3"
-                                  placeholder="Optional description of the category">{{ form_data.description if form_data else '' }}</textarea>
-                        <small class="form-text text-muted">Provide a brief description (optional).</small>
+                        <textarea class="form-control" id="description" name="description"
+                                  rows="4" maxlength="500"
+                                  placeholder="Optional: Provide a brief description of this category"></textarea>
+                        <div class="form-text">
+                            <span>Optional description to help identify the category (max 500 characters)</span>
+                            <span class="char-counter"><span id="descCount">0</span>/500</span>
+                        </div>
                     </div>
 
+                    
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Fields marked with * are required.
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> Once created, you can add products to this category from the product management section.
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Create Category
-                        </button>
-                        <a href="{{ url_for('list_categories') }}" class="btn btn-secondary">
+                 
+                    <div class="d-flex gap-3 justify-content-end mt-4">
+                        <a href="{{ url_for('list_categories') }}" class="btn btn-outline-titanium">
                             <i class="fas fa-times"></i> Cancel
                         </a>
+                        <button type="submit" class="btn btn-titanium">
+                            </i> Create Category
+                        </button>
                     </div>
                 </form>
-                {% else %}
-                <div class="alert alert-danger text-center">
-                    <i class="fas fa-lock"></i> Admin access required to create categories.
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+{% else %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="access-denied">
+            <i class="fas fa-lock"></i>
+            <h4>Admin Access Required</h4>
+            <p>You need administrator privileges to create categories.</p>
+            <a href="{{ url_for('list_categories') }}" class="btn btn-titanium">
+                <i class="fas fa-arrow-left"></i> Back to Categories
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Character counter for category name
+const nameInput = document.getElementById('name');
+const nameCount = document.getElementById('nameCount');
+
+if (nameInput && nameCount) {
+    nameInput.addEventListener('input', function() {
+        nameCount.textContent = this.value.length;
+
+        // Visual feedback when approaching limit
+        if (this.value.length > 45) {
+            nameCount.style.color = '#e74c3c';
+        } else {
+            nameCount.style.color = '#999';
+        }
+    });
+}
+
+// Character counter for description
+const descInput = document.getElementById('description');
+const descCount = document.getElementById('descCount');
+
+if (descInput && descCount) {
+    descInput.addEventListener('input', function() {
+        descCount.textContent = this.value.length;
+
+        // Visual feedback when approaching limit
+        if (this.value.length > 450) {
+            descCount.style.color = '#e74c3c';
+        } else {
+            descCount.style.color = '#999';
+        }
+    });
+}
+
+// Form validation
+document.getElementById('categoryForm')?.addEventListener('submit', function(e) {
+    const name = nameInput.value.trim();
+
+    if (name.length < 2) {
+        e.preventDefault();
+        alert('Category name must be at least 2 characters long.');
+        nameInput.focus();
+        return false;
+    }
+
+    if (name.length > 50) {
+        e.preventDefault();
+        alert('Category name must not exceed 50 characters.');
+        nameInput.focus();
+        return false;
+    }
+});
+
+// Auto-dismiss alerts after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        if (!alert.classList.contains('alert-info')) {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        }
+    });
+});
+</script>
+
 {% endblock %}

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Method{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Progress Steps -->
+            <div class="mb-5">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="small mt-2">Cart</div>
+                    </div>
+                    <div class="flex-fill" style="height: 2px; background-color: #28a745;"></div>
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="small mt-2">Shipping</div>
+                    </div>
+                    <div class="flex-fill" style="height: 2px; background-color: #28a745;"></div>
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            3
+                        </div>
+                        <div class="small mt-2 font-weight-bold">Payment</div>
+                    </div>
+                    <div class="flex-fill" style="height: 2px; background-color: #dee2e6;"></div>
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            4
+                        </div>
+                        <div class="small mt-2">Confirm</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Payment Selection Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-credit-card mr-2"></i>Select Payment Method</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('process_payment', order_id=order.id) }}" id="paymentForm">
+
+                        <div class="payment-methods">
+
+                          
+                            <div class="form-check payment-option p-3 mb-3 border rounded">
+                                <input class="form-check-input" type="radio" name="payment_method" id="gcash" value="gcash">
+                                <label class="form-check-label w-100" for="gcash">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-qrcode fa-2x text-primary mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0">GCash</h5>
+                                            <small class="text-muted">Pay using your GCash account</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+
+                           
+                            <div class="form-check payment-option p-3 mb-3 border rounded">
+                                <input class="form-check-input" type="radio" name="payment_method" id="maya" value="maya">
+                                <label class="form-check-label w-100" for="maya">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-qrcode fa-2x text-primary mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0">Maya</h5>
+                                            <small class="text-muted">Pay using your Maya wallet</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div class="form-check payment-option p-3 mb-3 border rounded">
+                                <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod">
+                                <label class="form-check-label w-100" for="cod">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave fa-2x text-primary mr-3"></i>
+                                        <div>
+                                            <h5 class="mb-0">Cash on Delivery</h5>
+                                            <small class="text-muted">Pay when you receive your order</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('shop') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left mr-2"></i>Back to Shop
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Continue to Payment <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Order Summary #{{ order.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Order Total:</span>
+                            <span>₱{{ "%.2f"|format(order.total_amount) }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between font-weight-bold h5">
+                            <span>Amount to Pay:</span>
+                            <span class="text-primary">₱{{ "%.2f"|format(order.total_amount) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="small text-muted mb-3">
+                        <i class="fas fa-calendar mr-2"></i>Order Date: {{ order.order_date.strftime('%B %d, %Y') }}
+                    </div>
+
+                    <div class="small text-muted">
+                        <i class="fas fa-info-circle mr-2"></i>Status: <span class="badge badge-warning">{{ order.order_status }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Note -->
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-lock mr-2"></i>
+                <strong>Secure Payment:</strong> Your payment information is encrypted and secure. We never store your credit card details.
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff !important;
+}
+
+.payment-option input[type="radio"]:checked ~ label {
+    background-color: #e7f3ff;
+}
+
+.payment-option input[type="radio"] {
+    margin-top: 0.5rem;
+}
+
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click event to payment options
+    const paymentOptions = document.querySelectorAll('.payment-option');
+    paymentOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+        });
+    });
+
+    // Form validation
+    const paymentForm = document.getElementById('paymentForm');
+    paymentForm.addEventListener('submit', function(e) {
+        const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+        if (!selectedPayment) {
+            e.preventDefault();
+            alert('Please select a payment method');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -17,42 +17,65 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     {% for item in cart_items %}
-                    <div class="row align-items-center border-bottom py-3" id="cart-item-{{ item.product.id }}">
+                    <div class="row align-items-center border-bottom py-3" id="cart-item-{{ item.product.id }}-{{ item.size }}">
                         <div class="col-md-2 text-center">
+                            {% if item.product.image_filename %}
+                            <img src="{{ url_for('product_image', id=item.product.id) }}"
+                                 class="img-fluid rounded cart-item-image"
+                                 style="max-height: 80px; object-fit: cover; cursor: pointer;"
+                                 alt="{{ item.product.name }}"
+                                 onclick="window.location.href='{{ url_for('shop_product_detail', id=item.product.id) }}'"
+                                 onerror="this.src='{{ url_for('static', filename='images/placeholder.png') }}'">
+                            {% else %}
                             <i class="fas fa-tshirt fa-3x text-primary"></i>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
-                            <h5 class="mb-1">{{ item.product.name }}</h5>
+                            <a href="{{ url_for('shop_product_detail', id=item.product.id) }}"
+                               class="text-decoration-none text-dark">
+                                <h5 class="mb-1">{{ item.product.name }}</h5>
+                            </a>
                             <p class="text-muted small mb-1">{{ item.product.product_code }}</p>
-                            <span class="badge bg-secondary">{{ item.product.size }}</span>
+                            <span class="badge bg-secondary">Size: {{ item.size }}</span>
                             <span class="badge bg-secondary">{{ item.product.color }}</span>
+                            <a href="{{ url_for('shop', category=item.product.category.id) }}"
+                               class="badge bg-info text-decoration-none">
+                                {{ item.product.category.name }}
+                            </a>
                         </div>
                         <div class="col-md-2">
                             <p class="mb-0 fw-bold">₱{{ "%.2f"|format(item.product.price) }}</p>
                         </div>
                         <div class="col-md-2">
+                            {% set available_qty = item.product.size_quantities.get(item.size, 0) %}
                             <div class="input-group input-group-sm">
-                                <button class="btn btn-outline-secondary qty-btn" type="button" 
-                                        data-action="decrease" data-product-id="{{ item.product.id }}">
+                                <button class="btn btn-outline-secondary qty-btn" type="button"
+                                        data-action="decrease"
+                                        data-product-id="{{ item.product.id }}"
+                                        data-size="{{ item.size }}">
                                     <i class="fas fa-minus"></i>
                                 </button>
-                                <input type="number" class="form-control text-center qty-input" 
-                                       value="{{ item.quantity }}" min="1" max="{{ item.product.quantity }}"
-                                       data-product-id="{{ item.product.id }}" readonly>
-                                <button class="btn btn-outline-secondary qty-btn" type="button" 
-                                        data-action="increase" data-product-id="{{ item.product.id }}"
-                                        {% if item.quantity >= item.product.quantity %}disabled{% endif %}>
+                                <input type="number" class="form-control text-center qty-input"
+                                       value="{{ item.quantity }}" min="1" max="{{ available_qty }}"
+                                       data-product-id="{{ item.product.id }}"
+                                       data-size="{{ item.size }}" readonly>
+                                <button class="btn btn-outline-secondary qty-btn" type="button"
+                                        data-action="increase"
+                                        data-product-id="{{ item.product.id }}"
+                                        data-size="{{ item.size }}"
+                                        {% if item.quantity >= available_qty %}disabled{% endif %}>
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
-                            <small class="text-muted">Max: {{ item.product.quantity }}</small>
+                            <small class="text-muted">Max: {{ available_qty }}</small>
                         </div>
                         <div class="col-md-2">
-                            <p class="mb-0 fw-bold subtotal" id="subtotal-{{ item.product.id }}">
+                            <p class="mb-0 fw-bold subtotal" id="subtotal-{{ item.product.id }}-{{ item.size }}">
                                 ₱{{ "%.2f"|format(item.subtotal) }}
                             </p>
-                            <form method="POST" action="{{ url_for('remove_from_cart', product_id=item.product.id) }}" 
+                            <form method="POST" action="{{ url_for('remove_from_cart', product_id=item.product.id) }}"
                                   class="d-inline" onsubmit="return confirm('Remove this item?');">
+                                <input type="hidden" name="size" value="{{ item.size }}">
                                 <button type="submit" class="btn btn-link btn-sm text-danger p-0">
                                     <i class="fas fa-trash"></i> Remove
                                 </button>
@@ -76,7 +99,7 @@
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Shipping:</span>
-                        <span class="text-success">FREE</span>
+                        <span class="text-success">₱250 Charges</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-3">
@@ -110,15 +133,24 @@
     {% endif %}
 </div>
 
+<style>
+.cart-item-image {
+    transition: transform 0.2s;
+}
+.cart-item-image:hover {
+    transform: scale(1.05);
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const qtyButtons = document.querySelectorAll('.qty-btn');
-
     qtyButtons.forEach(button => {
         button.addEventListener('click', function() {
             const productId = this.dataset.productId;
+            const size = this.dataset.size;
             const action = this.dataset.action;
-            const input = document.querySelector(`.qty-input[data-product-id="${productId}"]`);
+            const input = document.querySelector(`.qty-input[data-product-id="${productId}"][data-size="${size}"]`);
             let quantity = parseInt(input.value);
 
             if (action === 'increase') {
@@ -132,19 +164,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = `/cart/remove/${productId}`;
+
+                    const sizeInput = document.createElement('input');
+                    sizeInput.type = 'hidden';
+                    sizeInput.name = 'size';
+                    sizeInput.value = size;
+                    form.appendChild(sizeInput);
+
                     document.body.appendChild(form);
                     form.submit();
                 }
                 return;
             }
 
-            updateCart(productId, quantity);
+            updateCart(productId, size, quantity);
         });
     });
 
-    function updateCart(productId, quantity) {
+    function updateCart(productId, size, quantity) {
         const formData = new FormData();
         formData.append('quantity', quantity);
+        formData.append('size', size);
 
         fetch(`/cart/update/${productId}`, {
             method: 'POST',
@@ -153,10 +193,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const input = document.querySelector(`.qty-input[data-product-id="${productId}"]`);
+                const input = document.querySelector(`.qty-input[data-product-id="${productId}"][data-size="${size}"]`);
                 input.value = quantity;
 
-                const subtotalEl = document.getElementById(`subtotal-${productId}`);
+                const subtotalEl = document.getElementById(`subtotal-${productId}-${size}`);
                 subtotalEl.textContent = `₱${data.subtotal.toFixed(2)}`;
 
                 document.getElementById('cart-total').textContent = `₱${data.total.toFixed(2)}`;
@@ -168,14 +208,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const maxQty = parseInt(input.getAttribute('max'));
-                const increaseBtn = document.querySelector(`.qty-btn[data-action="increase"][data-product-id="${productId}"]`);
+                const increaseBtn = document.querySelector(`.qty-btn[data-action="increase"][data-product-id="${productId}"][data-size="${size}"]`);
                 if (quantity >= maxQty) {
                     increaseBtn.disabled = true;
                 } else {
                     increaseBtn.disabled = false;
                 }
             } else {
-                alert(data.message);
+                alert(data.message || 'Failed to update cart');
             }
         })
         .catch(error => {

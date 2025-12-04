@@ -3,47 +3,225 @@
 {% block title %}Categories - Ma Locozz Clothing Brand {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h2><i class="fas fa-tags"></i> Categories</h2>
-    </div>
-    <div class="col-md-6 text-end">
-        {% if session.role == 'admin' %}
-        <a href="{{ url_for('create_category') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add New Category
-        </a>
-        {% endif %}
+
+<style>
+.category-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+.category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    border-left-color: #5a5a5a;
+}
+.page-header {
+    background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 50%, #3a3a3a 100%);
+    padding: 25px 30px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.page-header h2 {
+    color: #e0e0e0;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.btn-titanium {
+    background: linear-gradient(135deg, #5a5a5a 0%, #7a7a7a 50%, #5a5a5a 100%);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.btn-titanium:hover {
+    background: linear-gradient(135deg, #6a6a6a 0%, #8a8a8a 50%, #6a6a6a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    color: #fff;
+}
+.card {
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.card-header {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e0e0e0;
+    padding: 20px;
+}
+.table thead {
+    background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 50%, #3a3a3a 100%);
+    color: #e0e0e0;
+}
+.table thead th {
+    border: none;
+    padding: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+.table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+.badge-count {
+    background: linear-gradient(135deg, #5a5a5a, #7a7a7a);
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 10px;
+}
+.btn-edit {
+    background: linear-gradient(135deg, #5a5a5a, #7a7a7a);
+    border: none;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+.btn-edit:hover {
+    background: linear-gradient(135deg, #6a6a6a, #8a8a8a);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.btn-delete {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    border: none;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+.btn-delete:hover {
+    background: linear-gradient(135deg, #a93226, #cb4335);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.search-box {
+    border: 2px solid #d0d0d0;
+    border-radius: 6px;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+}
+.search-box:focus {
+    border-color: #7a7a7a;
+    box-shadow: 0 0 0 3px rgba(120, 120, 120, 0.1);
+    outline: none;
+}
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+.empty-state i {
+    font-size: 4rem;
+    color: #b0b0b0;
+    margin-bottom: 20px;
+}
+.empty-state h5 {
+    color: #6a6a6a;
+    margin-bottom: 15px;
+}
+.empty-state p {
+    color: #999;
+    margin-bottom: 25px;
+}
+</style>
+
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2> Product Categories</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if session.role == 'Admin' %}
+            <a href="{{ url_for('create_category') }}" class="btn btn-titanium">
+                <i class="fas fa-plus-circle"></i> Add Category
+            </a>
+            {% endif %}
+        </div>
     </div>
 </div>
 
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
 <div class="card">
-    <div class="card-body">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">
+                    </i> Category List
+                    <span class="badge-count">{{ categories|length }}</span>
+                </h5>
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control search-box" id="searchInput"
+                       placeholder="🔍 Search categories...">
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
         {% if categories %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover mb-0" id="categoryTable">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th class="ps-4">Name</th>
                         <th>Description</th>
                         <th>Created Date</th>
-                        <th>Actions</th>
+                        <th class="text-center pe-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for category in categories %}
-                    <tr>
-                        <td><strong>{{ category.name }}</strong></td>
-                        <td>{{ category.description if category.description else 'No description' }}</td>
-                        <td>{{ category.created_at.strftime('%Y-%m-%d') }}</td>
+                    <tr class="align-middle category-card">
+                        <td class="ps-4">
+                            <i class="fas fa-folder text-muted me-2"></i>
+                            <strong>{{ category.name }}</strong>
+                        </td>
                         <td>
-                            <a href="{{ url_for('edit_category', id=category.id) }}" class="btn btn-sm btn-warning" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form method="POST" action="{{ url_for('delete_category', id=category.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this category?');">
-                                <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            {% if category.description %}
+                                {{ category.description[:80] }}{% if category.description|length > 80 %}...{% endif %}
+                            {% else %}
+                                <em class="text-muted">No description</em>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                <i class="far fa-calendar-alt me-1"></i>
+                                {{ category.created_at.strftime('%Y-%m-%d') }}
+                            </small>
+                        </td>
+                        <td class="text-center pe-4">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('edit_category', id=category.id) }}"
+                                   class="btn btn-sm btn-edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('delete_category', id=category.id) }}"
+                                      class="d-inline" onsubmit="return confirmDelete('{{ category.name }}');">
+                                    <button type="submit" class="btn btn-sm btn-delete" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -51,10 +229,49 @@
             </table>
         </div>
         {% else %}
-        <div class="alert alert-info text-center">
-            <i class="fas fa-info-circle"></i> No categories found. <a href="{{ url_for('create_category') }}">Add your first category</a>
+        <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            <h5>No Categories Found</h5>
+            <p>Get started by creating your first product category.</p>
+            {% if session.role == 'Admin' %}
+            <a href="{{ url_for('create_category') }}" class="btn btn-titanium">
+                <i class="fas fa-plus-circle"></i> Create Your First Category
+            </a>
+            {% endif %}
         </div>
         {% endif %}
     </div>
 </div>
+
+<script>
+// Live search functionality
+document.getElementById('searchInput')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#categoryTable tbody tr');
+
+    let visibleCount = 0;
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const isVisible = text.includes(searchTerm);
+        row.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
+    });
+});
+
+// Enhanced delete confirmation
+function confirmDelete(name) {
+    return confirm(`⚠️ Delete Category: "${name}"?\n\nThis action cannot be undone. All products in this category will need to be reassigned.`);
+}
+
+// Auto-dismiss alerts after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});
+</script>
 {% endblock %}

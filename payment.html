@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment - {{ payment_method|upper }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header text-white text-center py-4"
+                     style="background: {% if payment_method == 'gcash' %}linear-gradient(135deg, #007bff 0%, #0056b3 100%){% else %}linear-gradient(135deg, #28a745 0%, #1e7e34 100%){% endif %};">
+                    <i class="fas fa-mobile-alt fa-3x mb-3"></i>
+                    <h2 class="mb-0">
+                        {% if payment_method == 'gcash' %}
+                             GCash Payment
+                        {% elif payment_method == 'maya' %}
+                             Maya Payment
+                        {% endif %}
+                    </h2>
+                    <p class="mb-0 mt-2">Scan QR Code to Pay</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="text-center mb-4 p-4" style="background: #f8f9fa; border-radius: 10px;">
+                        <h6 class="text-muted mb-2">Order Number</h6>
+                        <h4 class="mb-3">#{{ order.id }}</h4>
+                        <h6 class="text-muted mb-2">Amount to Pay</h6>
+                        <h1 class="text-success font-weight-bold mb-0">₱{{ "%.2f"|format(order.total_amount) }}</h1>
+                    </div>
+
+                    <hr>
+
+                    <!-- Step-by-Step Instructions -->
+                    <div class="mb-4">
+                        <h5 class="mb-3"><i class="fas fa-list-ol"></i> How to Pay:</h5>
+
+                        {% if payment_method == 'gcash' %}
+                        <div class="instruction-steps">
+                            <div class="step-item">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <strong>Open GCash App</strong>
+                                    <p class="mb-0 text-muted">Launch the GCash application on your phone</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <strong>Tap "Pay QR"</strong>
+                                    <p class="mb-0 text-muted">Find and tap the "Pay QR" button on the home screen</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <strong>Scan QR Code</strong>
+                                    <p class="mb-0 text-muted">Scan the QR code on the payment page</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <strong>Verify Amount</strong>
+                                    <p class="mb-0 text-muted">Confirm the payment amount is ₱{{ "%.2f"|format(order.total_amount) }}</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">5</div>
+                                <div class="step-content">
+                                    <strong>Enter MPIN</strong>
+                                    <p class="mb-0 text-muted">Enter your GCash MPIN to complete payment</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% elif payment_method == 'maya' %}
+                        <div class="instruction-steps">
+                            <div class="step-item">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <strong>Open Maya App</strong>
+                                    <p class="mb-0 text-muted">Launch the Maya application on your phone</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <strong>Tap "Scan to Pay"</strong>
+                                    <p class="mb-0 text-muted">Find the QR scanner on your Maya home screen</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <strong>Scan QR Code</strong>
+                                    <p class="mb-0 text-muted">Scan the QR code shown on the payment page</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <strong>Verify Details</strong>
+                                    <p class="mb-0 text-muted">Check payment amount and merchant details</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-number">5</div>
+                                <div class="step-content">
+                                    <strong>Confirm Payment</strong>
+                                    <p class="mb-0 text-muted">Tap confirm to complete the transaction</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Payment Button -->
+                    <div class="text-center mb-4">
+                        <a href="{{ payment_url }}"
+                           class="btn btn-lg btn-block shadow-sm payment-btn"
+                           target="_blank">
+                            <i class="fas fa-qrcode mr-2"></i>
+                            Open Payment Page & Scan QR
+                        </a>
+                        <small class="text-muted d-block mt-3">
+                            <i class="fas fa-shield-alt"></i> Secured by PayMongo
+                        </small>
+                    </div>
+
+                    <!-- Payment Details Box -->
+                    <div class="payment-details-box">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-item">
+                                    <i class="fas fa-user text-primary"></i>
+                                    <div>
+                                        <small class="text-muted">Customer</small>
+                                        <p class="mb-0"><strong>{{ order.customer.first_name }} {{ order.customer.last_name }}</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-item">
+                                    <i class="fas fa-envelope text-primary"></i>
+                                    <div>
+                                        <small class="text-muted">Email</small>
+                                        <p class="mb-0"><strong>{{ order.customer.email }}</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-item">
+                                    <i class="fas fa-phone text-primary"></i>
+                                    <div>
+                                        <small class="text-muted">Phone</small>
+                                        <p class="mb-0"><strong>{{ order.customer.phone }}</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-item">
+                                    <i class="fas fa-calendar text-primary"></i>
+                                    <div>
+                                        <small class="text-muted">Order Date</small>
+                                        <p class="mb-0"><strong>{{ order.order_date.strftime('%b %d, %Y') }}</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Indicator -->
+                    <div class="text-center mt-4 p-4" style="background: #fff3cd; border-radius: 10px; border-left: 5px solid #ffc107;">
+                        <div class="mb-3">
+                            <div class="spinner-grow text-warning" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <h6 class="mb-2"><i class="fas fa-clock"></i> Waiting for Payment...</h6>
+                        <p class="text-muted mb-0">
+                            This page will automatically update once payment is confirmed
+                        </p>
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="alert alert-info mt-4">
+                        <h6><i class="fas fa-info-circle"></i> Important Notes:</h6>
+                        <ul class="mb-0 pl-3">
+                            <li>Payment expires in 30 minutes</li>
+                            <li>Do not close this page until payment is complete</li>
+                            <li>You will receive confirmation via email</li>
+                            <li>Having issues? Contact our support</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light text-center">
+                    <a href="{{ url_for('my_orders') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancel & View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .payment-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+
+    .payment-btn:hover {
+        transform: translateY(-2px);
+        color: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .instruction-steps {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .step-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        margin-right: 15px;
+    }
+
+    .step-content {
+        flex-grow: 1;
+    }
+
+    .step-content strong {
+        color: #333;
+        font-size: 1.1rem;
+    }
+
+    .payment-details-box {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .detail-item i {
+        font-size: 1.5rem;
+    }
+
+    .spinner-grow {
+        animation: spinner-grow 1s linear infinite;
+    }
+
+    @keyframes spinner-grow {
+        0% { transform: scale(0); opacity: 0; }
+        50% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0); opacity: 0; }
+    }
+</style>
+
+<script>
+    // Auto-check payment status every 10 seconds
+    let checkCount = 0;
+    const maxChecks = 180; // 30 minutes (10 sec intervals)
+
+    const interval = setInterval(function() {
+        checkCount++;
+
+        if (checkCount >= maxChecks) {
+            clearInterval(interval);
+            alert('Payment timeout. Please try again or contact support.');
+            window.location.href = "{{ url_for('my_orders') }}";
+            return;
+        }
+
+        fetch("{{ url_for('check_payment_status', order_id=order.id) }}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'paid') {
+                    clearInterval(interval);
+                    window.location.href = "{{ url_for('payment_success', order_id=order.id) }}";
+                }
+            })
+            .catch(error => console.error('Status check error:', error));
+    }, 10000);
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        clearInterval(interval);
+    });
+</script>
+{% endblock %}

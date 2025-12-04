@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %} Ma Locozz Clothing Brand {% endblock %}</title>
+    <title>Ma Locozz Clothing Brand</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,6 +14,7 @@
         }
         .navbar {
             background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            position: relative;
         }
         .content-wrapper {
             flex: 1;
@@ -22,6 +23,15 @@
         .navbar-brand {
             font-weight: bold;
             font-size: 1.5rem;
+            color: white !important;
+        }
+        /* Center brand on desktop */
+        @media (min-width: 992px) {
+            .navbar-brand {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
         }
         .nav-link {
             color: rgba(255,255,255,0.85) !important;
@@ -33,45 +43,48 @@
         .badge {
             font-size: 0.75rem;
         }
+        .dropdown-menu {
+            border-radius: 0.5rem;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-store"></i> Ma Locozz Clothing Brand
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                 Ma Locozz Clothing Brand
+            </a>
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if session.user_id %}
-                    {% if session.role == 'Admin' %}
-                        <ul class="navbar-nav me-auto">
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        {% if session.role == 'Admin' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('dashboard') }}">
-                                    <i class="fas fa-home"></i> Dashboard
+                                     Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('list_products') }}">
-                                    <i class="fas fa-tshirt"></i> Products
+                                    Products
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('list_categories') }}">
-                                    <i class="fas fa-tags"></i> Categories
+                                    Categories
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('list_users') }}">
-                                    <i class="fas fa-users"></i> Users
+                                     Users
                                 </a>
                             </li>
-                        </ul>
-                    {% else %}
-
-                        <ul class="navbar-nav me-auto">
+                        {% else %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('shop') }}">
                                     <i class="fas fa-shopping-bag"></i> Shop
@@ -86,22 +99,22 @@
                                 <a class="nav-link" href="{{ url_for('view_cart') }}">
                                     <i class="fas fa-shopping-cart"></i> Cart
                                     {% if session.cart %}
-                                    <span class="badge bg-light text-dark">{{ session.cart|length }}</span>
+                                    <span class="badge bg-danger">{{ session.cart|length }}</span>
                                     {% endif %}
                                 </a>
                             </li>
-                        </ul>
-                    {% endif %}
+                        {% endif %}
 
-                    <ul class="navbar-nav">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <!-- User Menu -->
+                        <li class="nav-item dropdown ms-2">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle"></i> {{ session.username }}
                                 <span class="badge {% if session.role == 'Admin' %}bg-danger{% else %}bg-info{% endif %}">
                                     {{ session.role }}
                                 </span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li>
                                     <a class="dropdown-item" href="{{ url_for('logout') }}">
                                         <i class="fas fa-sign-out-alt"></i> Logout
@@ -135,7 +148,7 @@
                     {% for category, message in messages %}
                         <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                             {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     {% endfor %}
                 {% endif %}

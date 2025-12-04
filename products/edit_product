@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Edit Product - {{ product.name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2><i class="fas fa-edit"></i> Edit Product</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                
+                <div class="mb-3">
+                    <label>Product Image</label>
+                    <div class="border rounded p-3 text-center">
+                        {% if product.image_filename %}
+                        <img id="preview" src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}" class="img-fluid" style="max-height: 200px;">
+                        {% else %}
+                        <img id="preview" src="{{ url_for('static', filename='images/placeholder.jpg') }}" class="img-fluid" style="max-height: 200px;">
+                        {% endif %}
+                        <input type="file" name="image" class="form-control mt-2" accept="image/*" onchange="previewImage(event)">
+                    </div>
+                </div>
+
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Product Code *</label>
+                        <input type="text" name="product_code" class="form-control" value="{{ product.product_code }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Name *</label>
+                        <input type="text" name="name" class="form-control" value="{{ product.name }}" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control" rows="3">{{ product.description or '' }}</textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Category *</label>
+                        <select name="category_id" class="form-select" required>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Color *</label>
+                        <input type="text" name="color" class="form-control" value="{{ product.color or '' }}" required>
+                    </div>
+                </div>
+
+                
+                <div class="mb-3">
+                    <label>Price (₱) *</label>
+                    <input type="number" name="price" class="form-control" value="{{ product.price }}" step="0.01" min="0" required>
+                </div>
+
+                
+                <div class="mb-3">
+                    <label><i class="fas fa-ruler me-2"></i>Size & Stock Quantities *</label>
+                    <div class="card">
+                        <div class="card-body">
+
+                            
+                            <h6 class="mb-3 text-primary"><i class="fas fa-tshirt me-1"></i> Shirt Sizes</h6>
+                            <div class="row g-3 mb-4">
+                                {% for size in ['XS', 'S', 'M', 'L', 'XL', '2XL'] %}
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <label class="fw-bold mb-2">{{ size }}</label>
+                                        <input type="number"
+                                               name="size_{{ size }}"
+                                               class="form-control"
+                                               value="{{ product.size_quantities[size] if product.size_quantities and size in product.size_quantities else 0 }}"
+                                               min="0"
+                                               placeholder="Quantity">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            
+                            <h6 class="mb-3 text-primary"><i class="fas fa-socks me-1"></i> Pants Sizes (Waist)</h6>
+                            <div class="row g-3 mb-4">
+                                {% for size in ['28', '30', '32', '34', '36', '38', '40'] %}
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <label class="fw-bold mb-2">{{ size }}" (Waist)</label>
+                                        <input type="number"
+                                               name="size_{{ size }}"
+                                               class="form-control"
+                                               value="{{ product.size_quantities[size] if product.size_quantities and size in product.size_quantities else 0 }}"
+                                               min="0"
+                                               placeholder="Quantity">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            
+                            <h6 class="mb-3 text-primary"><i class="fas fa-baseball-ball me-1"></i> Cap Sizes</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <label class="fw-bold mb-2">One Size (OS)</label>
+                                        <input type="number"
+                                               name="size_OS"
+                                               class="form-control"
+                                               value="{{ product.size_quantities['OS'] if product.size_quantities and 'OS' in product.size_quantities else 0 }}"
+                                               min="0"
+                                               placeholder="Quantity">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <small class="text-muted d-block mt-3">
+                                <i class="fas fa-info-circle"></i> Enter quantity for each size. Leave as 0 if size is not available.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <a href="{{ url_for('view_product', id=product.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(){ document.getElementById('preview').src = reader.result; }
+    reader.readAsDataURL(event.target.files[0]);
+}
+</script>
+{% endblock %}

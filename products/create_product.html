@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Product - Ma Locozz Clothing Brand{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Create New Product</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Display Errors -->
+                    {% if errors %}
+                        {% for error in errors %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ error }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-image"></i> Product Image
+                            </label>
+                            <div class="image-upload-container">
+                                <div class="image-preview" id="imagePreview">
+                                    <i class="fas fa-camera fa-3x text-muted"></i>
+                                    <p class="mt-2 text-muted">Click or drag image here</p>
+                                    <small class="text-muted">PNG, JPG, JPEG, GIF, WEBP (Max 5MB)</small>
+                                </div>
+                                <input type="file" class="form-control" id="product_image" name="product_image"
+                                       accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">
+                                    <i class="fas fa-barcode"></i> Product Code
+                                </label>
+                                <input type="text" class="form-control" name="product_code"
+                                       value="{{ request.form.get('product_code', '') }}"
+                                       placeholder="e.g., TEE001" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">
+                                    <i class="fas fa-tag"></i> Product Name
+                                </label>
+                                <input type="text" class="form-control" name="name"
+                                       value="{{ request.form.get('name', '') }}"
+                                       placeholder="e.g., Essential Cotton Tee" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-align-left"></i> Description
+                            </label>
+                            <textarea class="form-control" name="description" rows="3"
+                                      placeholder="Product description...">{{ request.form.get('description', '') }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">
+                                    <i class="fas fa-tags"></i> Category
+                                </label>
+                                <select class="form-select" name="category_id" required>
+                                    <option value="">Select Category</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}"
+                                            {% if request.form.get('category_id')|string == category.id|string %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">
+                                    <i class="fas fa-palette"></i> Color
+                                </label>
+                                <input type="text" class="form-control" name="color"
+                                       value="{{ request.form.get('color', '') }}"
+                                       placeholder="e.g., White, Black" required>
+                            </div>
+                        </div>
+
+                        <!-- Size & Quantity Section - Two Column Layout -->
+                        <div class="mb-3">
+                            <label class="form-label required">
+                                <i class="fas fa-boxes"></i> Size & Stock Quantities
+                            </label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="mb-3">Shirt Sizes</h6>
+                                    {% for size in ['XS','S','M','L','XL','2XL','3XL','4XL'] %}
+                                    <div class="row mb-2 align-items-center">
+                                        <div class="col-4">
+                                            <label class="form-label mb-0">{{ size }}</label>
+                                        </div>
+                                        <div class="col-8">
+                                            <input type="number" class="form-control" name="shirt_sizes[{{ size }}]"
+                                                   placeholder="Quantity" min="0"
+                                                   value="{{ request.form.get('shirt_sizes[' ~ size ~ ']', 0) }}">
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="mb-3">Pants Sizes (Waist)</h6>
+                                    {% for size in [29,30,32,34,36,38,40] %}
+                                    <div class="row mb-2 align-items-center">
+                                        <div class="col-4">
+                                            <label class="form-label mb-0">{{ size }}"</label>
+                                        </div>
+                                        <div class="col-8">
+                                            <input type="number" class="form-control" name="pant_sizes[{{ size }}]"
+                                                   placeholder="Quantity" min="0"
+                                                   value="{{ request.form.get('pant_sizes[' ~ size ~ ']', 0) }}">
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2">Enter quantities for available sizes (at least one required)</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">
+                                    <i class="fas fa-money-bill-wave"></i> Price (₱)
+                                </label>
+                                <input type="number" class="form-control" name="price" step="0.01"
+                                       value="{{ request.form.get('price', '') }}"
+                                       placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{{ url_for('list_products') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.required::after {
+    content: " *";
+    color: red;
+}
+
+.image-upload-container {
+    position: relative;
+}
+
+.image-preview {
+    width: 100%;
+    height: 300px;
+    border: 3px dashed #dee2e6;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #f8f9fa;
+    position: relative;
+    overflow: hidden;
+}
+
+.image-preview:hover {
+    border-color: #667eea;
+    background: #f0f0ff;
+}
+
+.image-preview.has-image {
+    border-style: solid;
+    border-color: #28a745;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#product_image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imagePreview = document.getElementById('imagePreview');
+    const fileInput = document.getElementById('product_image');
+
+    // Image preview functionality
+    function previewImage(file) {
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                fileInput.value = '';
+                return;
+            }
+            const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please upload a valid image file (PNG, JPG, JPEG, GIF, or WEBP)');
+                fileInput.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                imagePreview.classList.add('has-image');
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Click to upload
+    imagePreview.addEventListener('click', () => fileInput.click());
+
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+        previewImage(e.target.files[0]);
+    });
+
+    // Drag and drop
+    imagePreview.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        imagePreview.style.borderColor = '#667eea';
+        imagePreview.style.background = '#f0f0ff';
+    });
+
+    imagePreview.addEventListener('dragleave', () => {
+        imagePreview.style.borderColor = '#dee2e6';
+        imagePreview.style.background = '#f8f9fa';
+    });
+
+    imagePreview.addEventListener('drop', (e) => {
+        e.preventDefault();
+        imagePreview.style.borderColor = '#dee2e6';
+        imagePreview.style.background = '#f8f9fa';
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            previewImage(files[0]);
+        }
+    });
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const shirtInputs = document.querySelectorAll('input[name^="shirt_sizes["]');
+        const pantInputs = document.querySelectorAll('input[name^="pant_sizes["]');
+        let hasValidSize = false;
+
+        // Check if at least one size has quantity > 0
+        [...shirtInputs, ...pantInputs].forEach(input => {
+            if (parseInt(input.value) > 0) {
+                hasValidSize = true;
+            }
+        });
+
+        if (!hasValidSize) {
+            e.preventDefault();
+            alert('Please enter at least one quantity for shirt or pant sizes');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

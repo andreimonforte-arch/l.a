@@ -1,90 +1,293 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}My Orders{% endblock %}
+{% block title %}Track Order - Ma Locozz Clothing Brand{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-history"></i> My Orders</h2>
-        <a href="{{ url_for('shop') }}" class="btn btn-primary">
-            <i class="fas fa-shopping-bag"></i> Continue Shopping
-        </a>
+<div class="container py-5">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('shop') }}">Shop</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('my_orders') }}">My Orders</a></li>
+                <li class="breadcrumb-item active">Track Order</li>
+            </ol>
+        </nav>
+        <h2><i class="fas fa-map-marker-alt"></i> Track Your Order</h2>
+        <p class="text-muted">Order #{{ order.order_number }}</p>
     </div>
 
-    {% if orders %}
     <div class="row">
-        {% for order in orders %}
-        <div class="col-lg-12 mb-4">
+        <div class="col-lg-8 mb-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <p class="mb-0"><strong>Order #{{ order.id }}</strong></p>
-                            <small class="text-muted">{{ order.order_date.strftime('%B %d, %Y') }}</small>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="mb-0"><small class="text-muted">Status</small></p>
-                            {% if order.status == 'Pending' %}
-                            <span class="badge bg-warning text-dark">{{ order.status }}</span>
-                            {% elif order.status == 'Processing' %}
-                            <span class="badge bg-info">{{ order.status }}</span>
-                            {% elif order.status == 'Completed' %}
-                            <span class="badge bg-success">{{ order.status }}</span>
-                            {% elif order.status == 'Cancelled' %}
-                            <span class="badge bg-danger">{{ order.status }}</span>
-                            {% else %}
-                            <span class="badge bg-secondary">{{ order.status }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-3">
-                            <p class="mb-0"><small class="text-muted">Total</small></p>
-                            <h5 class="mb-0 text-success">₱{{ "%.2f"|format(order.total_amount) }}</h5>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-eye"></i> View Details
-                            </a>
-                        </div>
-                    </div>
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-route"></i> Order Timeline</h5>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for detail in order.order_details[:3] %}
-                        <div class="col-md-4 mb-3">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-tshirt fa-2x text-primary me-3"></i>
-                                <div>
-                                    <p class="mb-0"><strong>{{ detail.product.name }}</strong></p>
-                                    <small class="text-muted">Qty: {{ detail.quantity }} × ₱{{ "%.2f"|format(detail.price) }}</small>
-                                </div>
+                <div class="card-body p-4">
+                    <div class="timeline">
+                        {% for step in timeline %}
+                        <div class="timeline-item {% if step.completed %}completed{% endif %}">
+                            <div class="timeline-marker">
+                                {% if step.completed %}
+                                <i class="fas fa-check"></i>
+                                {% else %}
+                                <i class="fas fa-circle"></i>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ step.status }}</h6>
+                                {% if step.date %}
+                                <p class="text-muted small mb-0">
+                                    {{ step.date.strftime('%B %d, %Y at %I:%M %p') }}
+                                </p>
+                                {% else %}
+                                <p class="text-muted small mb-0">Pending</p>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
-                        {% if order.order_details|length > 3 %}
-                        <div class="col-md-4 mb-3">
-                            <div class="d-flex align-items-center">
-                                <div class="alert alert-info mb-0 py-2 px-3">
-                                    <i class="fas fa-plus-circle"></i> +{{ order.order_details|length - 3 }} more items
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-box"></i> Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Size</th>
+                                    <th>Color</th>
+                                    <th>Quantity</th>
+                                    <th class="text-end">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.product_name }}</strong>
+                                    </td>
+                                    <td>{{ item.size or 'N/A' }}</td>
+                                    <td>
+                                        <span class="color-badge">{{ item.color or 'N/A' }}</span>
+                                    </td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td class="text-end">₱{{ "%.2f"|format(item.price * item.quantity) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="border-top">
+                                <tr class="fw-bold">
+                                    <td colspan="4" class="text-end">Total:</td>
+                                    <td class="text-end text-success">₱{{ "%.2f"|format(order.total_amount) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
-    </div>
 
-    {% else %}
-    <div class="text-center py-5">
-        <i class="fas fa-shopping-bag fa-5x text-muted mb-4"></i>
-        <h3>No orders yet</h3>
-        <p class="text-muted">Start shopping to place your first order!</p>
-        <a href="{{ url_for('shop') }}" class="btn btn-primary btn-lg">
-            <i class="fas fa-shopping-bag"></i> Start Shopping
-        </a>
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="status-icon-large mb-3">
+                        {% if order.status == 'Delivered' %}
+                        <i class="fas fa-check-circle text-success"></i>
+                        {% elif order.status == 'Shipped' %}
+                        <i class="fas fa-shipping-fast text-info"></i>
+                        {% elif order.status == 'Processing' %}
+                        <i class="fas fa-cog fa-spin text-primary"></i>
+                        {% elif order.status == 'Cancelled' %}
+                        <i class="fas fa-times-circle text-danger"></i>
+                        {% else %}
+                        <i class="fas fa-clock text-warning"></i>
+                        {% endif %}
+                    </div>
+                    <h5>Current Status</h5>
+                    <span class="badge {% if order.status == 'Delivered' %}bg-success{% elif order.status == 'Shipped' %}bg-info{% elif order.status == 'Processing' %}bg-primary{% elif order.status == 'Cancelled' %}bg-danger{% else %}bg-warning{% endif %} fs-6 px-3 py-2">
+                        {{ order.status }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Order Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">Order Number:</span>
+                        <span class="info-value">{{ order.order_number or order.id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Order Date:</span>
+                        <span class="info-value">{{ order.order_date.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total Amount:</span>
+                        <span class="info-value fw-bold text-success">₱{{ "%.2f"|format(order.total_amount) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if order.status in ['Pending', 'Processing'] %}
+                    <form method="POST" action="{{ url_for('cancel_order', order_id=order.id) }}" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                        <button type="submit" class="btn btn-danger w-100 mb-2">
+                            <i class="fas fa-times"></i> Cancel Order
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('my_orders') }}" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="fas fa-list"></i> My Orders
+                    </a>
+                    <a href="{{ url_for('shop') }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-shopping-bag"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
 </div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 60px;
+    padding-bottom: 40px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 30px;
+    bottom: -10px;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-item.completed::before {
+    background: #28a745;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    border: 3px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.timeline-item.completed .timeline-marker {
+    background: #28a745;
+    color: white;
+}
+
+.timeline-content h6 {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.timeline-item.completed .timeline-content h6 {
+    color: #28a745;
+}
+
+.status-icon-large {
+    font-size: 4rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    font-weight: 500;
+    text-align: right;
+}
+
+.color-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 15px;
+    background: #f0f0f0;
+    font-size: 0.85rem;
+}
+
+.card {
+    border: none;
+    transition: all 0.3s;
+}
+
+.card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.table th {
+    border-top: none;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.5s ease-out;
+}
+</style>
 {% endblock %}
